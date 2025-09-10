@@ -1,5 +1,5 @@
-import 'package:carro_2_fin_expo_sqlite/applicarion/container_state.dart';
-import 'package:carro_2_fin_expo_sqlite/applicarion/provider_consultas.dart';
+import 'package:carro_2_fin_expo_sqlite/application/container_state.dart';
+import 'package:carro_2_fin_expo_sqlite/application/provider_consultas.dart';
 import 'package:carro_2_fin_expo_sqlite/data/consultas.dart';
 import 'package:carro_2_fin_expo_sqlite/data/sqlite_db.dart';
 import 'package:carro_2_fin_expo_sqlite/models/modelo_item.dart';

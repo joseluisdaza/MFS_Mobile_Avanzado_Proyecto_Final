@@ -1,4 +1,4 @@
-import 'package:carro_2_fin_expo_sqlite/applicarion/manager_state.dart';
+import 'package:carro_2_fin_expo_sqlite/application/manager_state.dart';
 import 'package:carro_2_fin_expo_sqlite/models/modelo_item.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/carga_datos.dart';
 import 'package:flutter/material.dart';
