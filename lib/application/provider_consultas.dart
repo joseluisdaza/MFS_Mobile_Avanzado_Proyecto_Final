@@ -46,10 +46,10 @@ class ModeloItemController extends AsyncNotifier<void> {
     // No llevamos estado local; este controller solo orquesta acciones.
   }
 
-  Future<ModeloItem> guardar(String nombre) async {
+  Future<ModeloItem> guardar(String nombre, int quantity, double price) async {
     state = const AsyncLoading();
     try {
-      final created = await _dao.guardar(nombre);
+      final created = await _dao.guardar(nombre, quantity, price);
       _refrescarListas(created.id);
       state = const AsyncData(null);
       return created;

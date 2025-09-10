@@ -11,6 +11,13 @@ Future<void> showItemDialog(
 }) async {
   final idCtrl = TextEditingController(text: initial?.id.toString() ?? '');
   final nombreCtrl = TextEditingController(text: initial?.name ?? '');
+  final quantityCtrl = TextEditingController(
+    text: initial?.quantity.toString() ?? '0',
+  );
+  final priceCtrl = TextEditingController(
+    text: initial?.price.toString() ?? '0.0',
+  );
+
   final formKey = GlobalKey<FormState>();
 
   final ok = await showDialog<bool>(
@@ -37,6 +44,38 @@ Future<void> showItemDialog(
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Ingrese un nombre' : null,
             ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: quantityCtrl,
+              decoration: const InputDecoration(labelText: 'Cantidad'),
+              keyboardType: TextInputType.number,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) {
+                  return 'La cantidad no puede ser vacia';
+                }
+                final n = int.tryParse(v);
+                if (n == null || n < 0) {
+                  return 'La Cantidad no puede ser negativa';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: priceCtrl,
+              decoration: const InputDecoration(labelText: 'Precio'),
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) {
+                  return 'El precio no puede ser vacio';
+                }
+                final n = double.tryParse(v);
+                if (n == null || n < 0) {
+                  return 'El precio no puede ser negativo';
+                }
+                return null;
+              },
+            ),
           ],
         ),
       ),
@@ -55,6 +94,8 @@ Future<void> showItemDialog(
                       id: int.parse(idCtrl.text),
                       name: nombreCtrl.text,
                       inCart: false,
+                      quantity: initial?.quantity ?? 0,
+                      price: initial?.price ?? 0.0,
                     ),
                   );
 

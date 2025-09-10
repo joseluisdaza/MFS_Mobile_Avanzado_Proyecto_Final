@@ -13,7 +13,13 @@ class ManagerStateNotifier extends StateNotifier<ContainerState> {
     : super(
         ContainerState(
           listaItem: [],
-          inputItem: ModeloItem(id: -1, name: '', inCart: false),
+          inputItem: ModeloItem(
+            id: -1,
+            name: '',
+            inCart: false,
+            quantity: 0,
+            price: 0.0,
+          ),
         ),
       ) {
     _dao = ref.read(modeloItemDaoProvider);
@@ -35,7 +41,7 @@ class ManagerStateNotifier extends StateNotifier<ContainerState> {
       //---
       final response = ref
           .read(modeloItemControllerProvider.notifier)
-          .guardar(item.name.toString());
+          .guardar(item.name.toString(), item.quantity, item.price);
       //---
     } else {
       listaTemporal[idx] = item;
@@ -88,12 +94,18 @@ class ManagerStateNotifier extends StateNotifier<ContainerState> {
 
   // limpiar el estado de inpuItem
   void clearInput() {
-    state = state.copyWith(null, ModeloItem(id: -1, name: '', inCart: false));
+    state = state.copyWith(
+      null,
+      ModeloItem(id: -1, name: '', inCart: false, quantity: 0, price: 0.0),
+    );
   }
 
   // limpiar todo es state
   void clearAllState() {
-    state = state.copyWith([], ModeloItem(id: -1, name: '', inCart: false));
+    state = state.copyWith(
+      [],
+      ModeloItem(id: -1, name: '', inCart: false, quantity: 0, price: 0.0),
+    );
   }
 
   // Devolver la lista completa
