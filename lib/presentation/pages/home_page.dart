@@ -20,8 +20,10 @@ class HomePage extends ConsumerWidget {
             items: menuItems
                 .map((String e) => DropdownMenuItem(value: e, child: Text(e)))
                 .toList(),
-            onChanged: (String? value) =>
-                ref.read(menuProvider.notifier).update((_) => value!),
+            onChanged: (String? value) {
+              debugPrint('Selected menu item: $value');
+              ref.read(menuProvider.notifier).update((_) => value!);
+            },
           ),
         ],
       ),

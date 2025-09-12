@@ -137,7 +137,10 @@ final managerProvider =
       (ref) => ManagerStateNotifier(ref),
     );
 
-var menuItems = ['En el carrito', 'Por comprar', 'Completa'];
+const String filtroInventario = "Inventario";
+const String filtroCarrito = "Carrito";
+const String filtroPorComprar = "Por comprar";
+var menuItems = [filtroCarrito, filtroPorComprar, filtroInventario];
 
 final menuProvider = StateProvider<String>((ref) {
   return 'Completa';
@@ -146,14 +149,17 @@ final menuProvider = StateProvider<String>((ref) {
 final fiteredCartListProvider = Provider<List<ModeloItem>>((ref) {
   final filter = ref.watch(menuProvider);
   final listaTemporal = ref.watch(managerProvider).listaItem;
+
   switch (filter) {
-    case 'Completa':
-      return listaTemporal;
-    case 'En el carrito':
+    case filtroPorComprar:
+      return listaTemporal.where((item) => item.quantity > 0).toList();
+    case filtroCarrito:
       return listaTemporal.where((item) => item.inCart).toList();
-    case 'Por comprar':
-      return listaTemporal.where((item) => !item.inCart).toList();
+    case filtroInventario:
+      return listaTemporal;
   }
+
+  //Retorna exepción si no coincide con ningún caso
   throw {};
 });
 
