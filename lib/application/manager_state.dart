@@ -143,7 +143,7 @@ const String filtroPorComprar = "Por comprar";
 var menuItems = [filtroCarrito, filtroPorComprar, filtroInventario];
 
 final menuProvider = StateProvider<String>((ref) {
-  return 'Completa';
+  return filtroInventario;
 });
 
 final fiteredCartListProvider = Provider<List<ModeloItem>>((ref) {
