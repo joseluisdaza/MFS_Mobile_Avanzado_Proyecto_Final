@@ -69,65 +69,104 @@ class HomePage extends ConsumerWidget {
           itemCount: carItems.length,
           itemBuilder: (context, index) {
             final item = carItems[index];
-            return Padding(
-              padding: const EdgeInsets.all(5.0),
-              child: Card(
-                elevation: 10,
-                child: CheckboxListTile(
-                  title: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          item.id.toString(),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+            final selectedMenu = ref.watch(menuProvider);
+            Widget content = Card(
+              elevation: 10,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.id.toString(),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.name.toString(),
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name.toString(),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(height: 4),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            item.price.toStringAsFixed(2),
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 4),
+                          if (selectedMenu == filtroInventario)
                             Text(
-                              item.price.toStringAsFixed(2),
+                              '${item.quantity} item(s)',
                               style: const TextStyle(fontSize: 16),
                             ),
-                            const SizedBox(height: 4),
-                            Builder(
-                              builder: (context) {
-                                final selectedMenu = ref.watch(menuProvider);
-                                if (selectedMenu == filtroInventario) {
-                                  return Text(
-                                    '${item.quantity} item(s)',
-                                    style: const TextStyle(fontSize: 16),
-                                  );
-                                } else {
-                                  return const SizedBox.shrink();
-                                }
-                              },
-                            ),
-                          ],
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                  value: item.inCart,
-                  onChanged: (value) => ref
-                      .read(managerProvider.notifier)
-                      .toggleSelectedById(item.id),
+                    ),
+                  ],
                 ),
               ),
             );
+            if (selectedMenu == filtroComprar) {
+              return Padding(
+                padding: const EdgeInsets.all(5.0),
+                child: Card(
+                  elevation: 10,
+                  child: CheckboxListTile(
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.id.toString(),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.name.toString(),
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                item.price.toStringAsFixed(2),
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    value: item.inCart,
+                    onChanged: (value) => ref
+                        .read(managerProvider.notifier)
+                        .toggleSelectedById(item.id),
+                  ),
+                ),
+              );
+            } else {
+              return Padding(
+                padding: const EdgeInsets.all(5.0),
+                child: content,
+              );
+            }
           },
         ),
       ),
