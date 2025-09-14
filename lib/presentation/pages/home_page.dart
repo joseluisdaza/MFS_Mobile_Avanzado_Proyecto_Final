@@ -38,12 +38,52 @@ class HomePage extends ConsumerWidget {
               child: Card(
                 elevation: 10,
                 child: CheckboxListTile(
-                  title: ListTile(
-                    leading: CircleAvatar(child: Text(item.id.toString())),
-                    title: Text(
-                      item.name.toString(),
-                      style: TextStyle(fontSize: 25),
-                    ),
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.id.toString(),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.name.toString(),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item.price.toStringAsFixed(2),
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                            const SizedBox(height: 4),
+                            Builder(
+                              builder: (context) {
+                                final selectedMenu = ref.watch(menuProvider);
+                                if (selectedMenu == filtroInventario) {
+                                  return Text(
+                                    '${item.quantity} item(s)',
+                                    style: const TextStyle(fontSize: 16),
+                                  );
+                                } else {
+                                  return const SizedBox.shrink();
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   value: item.inCart,
                   onChanged: (value) => ref
