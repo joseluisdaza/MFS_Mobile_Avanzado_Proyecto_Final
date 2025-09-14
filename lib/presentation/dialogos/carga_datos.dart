@@ -87,6 +87,14 @@ Future<void> showItemDialog(
         FilledButton(
           onPressed: () async {
             if (formKey.currentState!.validate()) {
+              debugPrint('JOSH: Agregando/Guardando ítem...');
+              debugPrint(
+                'JOSH: id: ${idCtrl.text}, nombre: ${nombreCtrl.text}',
+              );
+              debugPrint(
+                'JOSH: quantity: ${quantityCtrl.text}, price: ${priceCtrl.text}',
+              );
+
               final added = ref
                   .read(managerProvider.notifier)
                   .addOrUpdateWith(
@@ -94,8 +102,8 @@ Future<void> showItemDialog(
                       id: int.parse(idCtrl.text),
                       name: nombreCtrl.text,
                       inCart: false,
-                      quantity: initial?.quantity ?? 0,
-                      price: initial?.price ?? 0.0,
+                      quantity: int.parse(quantityCtrl.text),
+                      price: double.parse(priceCtrl.text),
                     ),
                   );
 

@@ -139,8 +139,8 @@ final managerProvider =
 
 const String filtroInventario = "Inventario";
 const String filtroCarrito = "Carrito";
-const String filtroPorComprar = "Por comprar";
-var menuItems = [filtroCarrito, filtroPorComprar, filtroInventario];
+const String filtroComprar = "Comprar";
+var menuItems = [filtroCarrito, filtroComprar, filtroInventario];
 
 final menuProvider = StateProvider<String>((ref) {
   return filtroInventario;
@@ -151,12 +151,15 @@ final fiteredCartListProvider = Provider<List<ModeloItem>>((ref) {
   final listaTemporal = ref.watch(managerProvider).listaItem;
 
   switch (filter) {
-    case filtroPorComprar:
-      return listaTemporal.where((item) => item.quantity > 0).toList();
-    case filtroCarrito:
-      return listaTemporal.where((item) => item.inCart).toList();
+    //Devolver todos los items
     case filtroInventario:
       return listaTemporal;
+    //Mostrar todos los items con existencias
+    case filtroComprar:
+      return listaTemporal.where((item) => item.quantity > 0).toList();
+    //Mostrar solo los items en el carrito
+    case filtroCarrito:
+      return listaTemporal.where((item) => item.inCart).toList();
   }
 
   //Retorna exepción si no coincide con ningún caso
