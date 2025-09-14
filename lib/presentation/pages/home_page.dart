@@ -27,6 +27,42 @@ class HomePage extends ConsumerWidget {
           ),
         ],
       ),
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            const DrawerHeader(
+              child: Text('Menú', style: TextStyle(fontSize: 24)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.inventory),
+              title: const Text(filtroInventario),
+              selected: ref.watch(menuProvider) == filtroInventario,
+              onTap: () {
+                ref.read(menuProvider.notifier).state = filtroInventario;
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.shopping_cart),
+              title: const Text(filtroCarrito),
+              selected: ref.watch(menuProvider) == filtroCarrito,
+              onTap: () {
+                ref.read(menuProvider.notifier).state = filtroCarrito;
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.attach_money),
+              title: const Text(filtroComprar),
+              selected: ref.watch(menuProvider) == filtroComprar,
+              onTap: () {
+                ref.read(menuProvider.notifier).state = filtroComprar;
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
       body: Padding(
         padding: EdgeInsets.all(20),
         child: ListView.builder(
@@ -95,11 +131,13 @@ class HomePage extends ConsumerWidget {
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showItemDialog(context, ref);
-        },
-      ),
+      floatingActionButton: ref.watch(menuProvider) == filtroInventario
+          ? FloatingActionButton(
+              onPressed: () {
+                showItemDialog(context, ref);
+              },
+            )
+          : null,
     );
   }
 }
