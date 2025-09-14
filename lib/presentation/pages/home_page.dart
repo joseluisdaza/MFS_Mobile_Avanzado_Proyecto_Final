@@ -131,13 +131,86 @@ class HomePage extends ConsumerWidget {
           },
         ),
       ),
-      floatingActionButton: ref.watch(menuProvider) == filtroInventario
-          ? FloatingActionButton(
+      floatingActionButton: Builder(
+        builder: (context) {
+          final selectedMenu = ref.watch(menuProvider);
+          if (selectedMenu == filtroInventario) {
+            return FloatingActionButton(
               onPressed: () {
+                debugPrint('Josh: Agregando nuevo ítem...');
                 showItemDialog(context, ref);
               },
-            )
-          : null,
+              tooltip: 'Agregar producto',
+              child: const Icon(Icons.add),
+            );
+          } else if (selectedMenu == filtroCarrito) {
+            return FloatingActionButton(
+              onPressed: () {
+                debugPrint('Josh: Pagando...');
+                final carItems = ref.watch(fiteredCartListProvider);
+                final total = carItems.fold<double>(
+                  0,
+                  (sum, item) => sum + item.price * (item.quantity ?? 1),
+                );
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text('Resumen de compra'),
+                      content: SizedBox(
+                        width: double.maxFinite,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ...carItems.map(
+                              (item) => ListTile(
+                                title: Text(item.name ?? ''),
+                                trailing: Text(
+                                  'S/ ${item.price.toStringAsFixed(2)} x${item.quantity ?? 1}',
+                                ),
+                              ),
+                            ),
+                            const Divider(),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'Total: S/ ${total.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Cancelar'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            // Aquí puedes agregar la lógica para confirmar el pago y actualizar inventario
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('¡Pago realizado!')),
+                            );
+                          },
+                          child: const Text('Pagar'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              tooltip: 'Pagar',
+              child: const Icon(Icons.payment),
+            );
+          } else {
+            return SizedBox.shrink();
+          }
+        },
+      ),
     );
   }
 }
