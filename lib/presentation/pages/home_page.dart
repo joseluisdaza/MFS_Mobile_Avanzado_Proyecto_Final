@@ -1,6 +1,7 @@
 import 'package:carro_2_fin_expo_sqlite/application/manager_state.dart';
 import 'package:carro_2_fin_expo_sqlite/models/modelo_item.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/carga_datos.dart';
+import 'package:carro_2_fin_expo_sqlite/presentation/pages/edit_item_dialog.dart';
 import 'package:carro_2_fin_expo_sqlite/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -158,6 +159,41 @@ class HomePage extends ConsumerWidget {
                         ],
                       ),
                     ),
+
+                    // Add edit button for inventory view
+                    if (selectedMenu == filtroInventario)
+                      PopupMenuButton<String>(
+                        onSelected: (String value) {
+                          if (value == 'edit') {
+                            _showEditItemDialog(context, ref, item);
+                          } else if (value == 'delete') {
+                            _showDeleteConfirmation(context, ref, item);
+                          }
+                        },
+                        itemBuilder: (BuildContext context) => [
+                          const PopupMenuItem<String>(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit, color: Colors.blue),
+                                SizedBox(width: 8),
+                                Text('Editar'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text('Eliminar'),
+                              ],
+                            ),
+                          ),
+                        ],
+                        icon: const Icon(Icons.more_vert),
+                      ),
                   ],
                 ),
               ),
@@ -436,6 +472,54 @@ class HomePage extends ConsumerWidget {
           }
         },
       ),
+    );
+  }
+
+  // Method to show edit item dialog
+  void _showEditItemDialog(
+    BuildContext context,
+    WidgetRef ref,
+    ModeloItem item,
+  ) {
+    showEditItemDialog(context, ref, item);
+  }
+
+  // Method to show delete confirmation dialog
+  void _showDeleteConfirmation(
+    BuildContext context,
+    WidgetRef ref,
+    ModeloItem item,
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar eliminación'),
+          content: Text(
+            '¿Estás seguro de que quieres eliminar "${item.name}"?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                ref.read(managerProvider.notifier).removeItemById(item.id!);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${item.name} eliminado')),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
     );
   }
 
