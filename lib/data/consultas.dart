@@ -8,7 +8,7 @@ class ModeloItemDao {
 
   ModeloItemDao(this._appDb);
 
-  Future<Database> get _db async => _appDb.database;
+  Future<Database> get _db async => await _appDb.database;
 
   Future<ModeloItem> guardar(
     String nombre,
