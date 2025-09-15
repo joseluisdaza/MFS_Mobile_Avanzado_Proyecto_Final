@@ -120,8 +120,9 @@ class HomePage extends ConsumerWidget {
                 padding: const EdgeInsets.all(5.0),
                 child: Card(
                   elevation: 10,
-                  child: CheckboxListTile(
-                    title: Row(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
                       children: [
                         Expanded(
                           child: Text(
@@ -152,12 +153,97 @@ class HomePage extends ConsumerWidget {
                             ],
                           ),
                         ),
+                        Checkbox(
+                          value: item.inCart,
+                          onChanged: (value) {
+                            ref
+                                .read(managerProvider.notifier)
+                                .toggleSelectedById(item.id);
+
+                            if (value == true) {
+                              ref
+                                  .read(managerProvider.notifier)
+                                  .actualizarCartQuantity(item.id, 1);
+                            } else {
+                              ref
+                                  .read(managerProvider.notifier)
+                                  .actualizarCartQuantity(item.id, 0);
+                            }
+                          },
+                        ),
                       ],
                     ),
-                    value: item.inCart,
-                    onChanged: (value) => ref
-                        .read(managerProvider.notifier)
-                        .toggleSelectedById(item.id),
+                  ),
+                ),
+              );
+            } else if (selectedMenu == filtroCarrito) {
+              return Padding(
+                padding: const EdgeInsets.all(5.0),
+                child: Card(
+                  elevation: 10,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.id.toString(),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.name.toString(),
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                item.price.toStringAsFixed(2),
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.remove),
+                                    onPressed: () {
+                                      ref
+                                          .read(managerProvider.notifier)
+                                          .decrementCartQuantity(item.id);
+                                    },
+                                  ),
+                                  Text(
+                                    '${item.shoppingCartQuantity}',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add),
+                                    onPressed: () {
+                                      ref
+                                          .read(managerProvider.notifier)
+                                          .incrementCartQuantity(item.id);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );

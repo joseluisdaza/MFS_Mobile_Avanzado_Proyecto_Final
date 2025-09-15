@@ -6,6 +6,67 @@ import 'package:carro_2_fin_expo_sqlite/models/modelo_item.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ManagerStateNotifier extends StateNotifier<ContainerState> {
+  // Incrementar la cantidad de un item en el carrito
+  void incrementCartQuantity(int? id) {
+    final idx = state.listaItem.indexWhere((e) => e.id == id);
+    if (idx == -1) return;
+    final itemAnterior = state.listaItem[idx];
+    final nuevaCantidad = (itemAnterior.shoppingCartQuantity) + 1;
+    final itemActualizado = itemAnterior.copyWith(
+      shoppingCartQuantity: nuevaCantidad,
+    );
+    final listaTemporal = [...state.listaItem];
+    listaTemporal[idx] = itemActualizado;
+    final sameAsInput = state.inputItem.id == id;
+    state = state.copyWith(
+      listaTemporal,
+      sameAsInput
+          ? state.inputItem.copyWith(shoppingCartQuantity: nuevaCantidad)
+          : null,
+    );
+  }
+
+  // Decrementar la cantidad de un item en el carrito
+  void decrementCartQuantity(int? id) {
+    final idx = state.listaItem.indexWhere((e) => e.id == id);
+    if (idx == -1) return;
+    final itemAnterior = state.listaItem[idx];
+    final nuevaCantidad = (itemAnterior.shoppingCartQuantity > 0)
+        ? itemAnterior.shoppingCartQuantity - 1
+        : 0;
+    final itemActualizado = itemAnterior.copyWith(
+      shoppingCartQuantity: nuevaCantidad,
+    );
+    final listaTemporal = [...state.listaItem];
+    listaTemporal[idx] = itemActualizado;
+    final sameAsInput = state.inputItem.id == id;
+    state = state.copyWith(
+      listaTemporal,
+      sameAsInput
+          ? state.inputItem.copyWith(shoppingCartQuantity: nuevaCantidad)
+          : null,
+    );
+  }
+
+  void actualizarCartQuantity(int? id, int cantidad) {
+    final idx = state.listaItem.indexWhere((e) => e.id == id);
+    if (idx == -1) return;
+    final itemAnterior = state.listaItem[idx];
+    final nuevaCantidad = (cantidad < 0) ? 0 : cantidad;
+    final itemActualizado = itemAnterior.copyWith(
+      shoppingCartQuantity: nuevaCantidad,
+    );
+    final listaTemporal = [...state.listaItem];
+    listaTemporal[idx] = itemActualizado;
+    final sameAsInput = state.inputItem.id == id;
+    state = state.copyWith(
+      listaTemporal,
+      sameAsInput
+          ? state.inputItem.copyWith(shoppingCartQuantity: nuevaCantidad)
+          : null,
+    );
+  }
+
   final Ref ref;
   late final ModeloItemDao _dao;
 
