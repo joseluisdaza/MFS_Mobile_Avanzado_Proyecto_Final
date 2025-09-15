@@ -19,6 +19,10 @@ class ManagerStateNotifier extends StateNotifier<ContainerState> {
             inCart: false,
             quantity: 0,
             price: 0.0,
+            description: "",
+            category: "",
+            image: "",
+            shoppingCartQuantity: 0,
           ),
         ),
       ) {
@@ -41,14 +45,22 @@ class ManagerStateNotifier extends StateNotifier<ContainerState> {
       //---
       final response = ref
           .read(modeloItemControllerProvider.notifier)
-          .guardar(item.name.toString(), item.quantity, item.price);
+          .guardar(
+            item.name.toString(),
+            item.quantity,
+            item.price,
+            item.description.toString(),
+            item.category.toString(),
+            item.image.toString(),
+            item.shoppingCartQuantity,
+          );
       //---
     } else {
       listaTemporal[idx] = item;
       //---
       final response = ref
           .read(modeloItemControllerProvider.notifier)
-          .modificarNombre(item.id, item.name.toString());
+          .modificar(item);
       //---
     }
     state = state.copyWith(listaTemporal, null);

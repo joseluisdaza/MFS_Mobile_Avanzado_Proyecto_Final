@@ -2,7 +2,7 @@ import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 class AppDb {
-  static const _dbName = 'app.db2';
+  static const _dbName = 'app2.db';
   static const _dbVersion = 1;
   static const table = 'productos';
 
@@ -21,7 +21,11 @@ class AppDb {
             name TEXT NOT NULL,
             inCart INTEGER NOT NULL DEFAULT 1,
             quantity INTEGER NOT NULL DEFAULT 0,
-            price REAL NOT NULL DEFAULT 0.0
+            price REAL NOT NULL DEFAULT 0.0,
+            description TEXT NOT NULL,
+            category TEXT NOT NULL,
+            image TEXT NOT NULL,
+            shoppingCartQuantity INTEGER NOT NULL DEFAULT 0
           );
         ''');
         await db.execute('CREATE INDEX idx_productos_nombre ON $table(name);');

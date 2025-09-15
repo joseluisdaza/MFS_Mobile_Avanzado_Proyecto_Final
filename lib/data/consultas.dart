@@ -10,13 +10,27 @@ class ModeloItemDao {
 
   Future<Database> get _db async => _appDb.database;
 
-  Future<ModeloItem> guardar(String nombre, int quantity, double price) async {
+  Future<ModeloItem> guardar(
+    String nombre,
+    int quantity,
+    double price,
+    String? description,
+    String? category,
+    String? image,
+    int shoppingCartQuantity,
+  ) async {
     final db = await _db;
     final id = await db.insert(_table, <String, Object?>{
       'name': nombre,
       'inCart': 0,
       'quantity': quantity < 0 ? 0 : quantity,
       'price': price < 0 ? 0.0 : price,
+      'description': description,
+      'category': category,
+      'image': image,
+      'shoppingCartQuantity': shoppingCartQuantity < 0
+          ? 0
+          : shoppingCartQuantity,
     }, conflictAlgorithm: ConflictAlgorithm.abort);
     return ModeloItem(
       id: id,
@@ -44,6 +58,23 @@ class ModeloItemDao {
     return ModeloItem.fromMap(rows.first);
   }
 
+  Future<int> modificar(ModeloItem item) async {
+    final db = await _db;
+    final updateMap = <String, Object?>{
+      'name': item.name,
+      'inCart': item.inCart ? 1 : 0,
+      'quantity': item.quantity < 0 ? 0 : item.quantity,
+      'price': item.price < 0 ? 0.0 : item.price,
+      'description': item.description,
+      'category': item.category,
+      'image': item.image,
+      'shoppingCartQuantity': item.shoppingCartQuantity < 0
+          ? 0
+          : item.shoppingCartQuantity,
+    };
+    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [item.id]);
+  }
+
   Future<int> modificarNombre(int id, String nuevoNombre) async {
     final db = await _db;
     final updateMap = <String, Object?>{'name': nuevoNombre};
@@ -63,6 +94,38 @@ class ModeloItemDao {
     final updateMap = <String, Object?>{
       'price': nuevoPrecio < 0 ? 0.0 : nuevoPrecio,
     };
+    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> modificarDescripcion(int id, String? nuevaDescripcion) async {
+    final db = await _db;
+    final updateMap = <String, Object?>{'description': nuevaDescripcion};
+    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> modificarCategoria(int id, String? nuevaCategoria) async {
+    final db = await _db;
+    final updateMap = <String, Object?>{'category': nuevaCategoria};
+    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> modificarImagen(int id, String? nuevaImagen) async {
+    final db = await _db;
+    final updateMap = <String, Object?>{'image': nuevaImagen};
+    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> modificarShoppingCartQuantity(int id, int nuevaCantidad) async {
+    final db = await _db;
+    final updateMap = <String, Object?>{
+      'shoppingCartQuantity': nuevaCantidad < 0 ? 0 : nuevaCantidad,
+    };
+    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> modificarInCart(int id, bool inCart) async {
+    final db = await _db;
+    final updateMap = <String, Object?>{'inCart': inCart ? 1 : 0};
     return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
   }
 

@@ -17,6 +17,11 @@ Future<void> showItemDialog(
   final priceCtrl = TextEditingController(
     text: initial?.price.toString() ?? '0.0',
   );
+  final descripcionCtrl = TextEditingController(
+    text: initial?.description ?? '',
+  );
+  final categoryCtrl = TextEditingController(text: initial?.category ?? '');
+  final imageCtrl = TextEditingController(text: initial?.image ?? '');
 
   final formKey = GlobalKey<FormState>();
 
@@ -76,6 +81,30 @@ Future<void> showItemDialog(
                 return null;
               },
             ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: descripcionCtrl,
+              decoration: const InputDecoration(labelText: 'Descripcion'),
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Ingrese una descripcion'
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: categoryCtrl,
+              decoration: const InputDecoration(labelText: 'Categoria'),
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Ingrese una categoria'
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: imageCtrl,
+              decoration: const InputDecoration(labelText: 'Imagen (URL)'),
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Ingrese una URL de imagen'
+                  : null,
+            ),
           ],
         ),
       ),
@@ -104,6 +133,10 @@ Future<void> showItemDialog(
                       inCart: false,
                       quantity: int.parse(quantityCtrl.text),
                       price: double.parse(priceCtrl.text),
+                      description: descripcionCtrl.text,
+                      category: categoryCtrl.text,
+                      image: imageCtrl.text,
+                      shoppingCartQuantity: 0,
                     ),
                   );
 

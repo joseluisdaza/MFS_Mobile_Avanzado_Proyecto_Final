@@ -46,10 +46,26 @@ class ModeloItemController extends AsyncNotifier<void> {
     // No llevamos estado local; este controller solo orquesta acciones.
   }
 
-  Future<ModeloItem> guardar(String nombre, int quantity, double price) async {
+  Future<ModeloItem> guardar(
+    String nombre,
+    int quantity,
+    double price,
+    String description,
+    String category,
+    String image,
+    int shoppingCartQuantity,
+  ) async {
     state = const AsyncLoading();
     try {
-      final created = await _dao.guardar(nombre, quantity, price);
+      final created = await _dao.guardar(
+        nombre,
+        quantity,
+        price,
+        description,
+        category,
+        image,
+        shoppingCartQuantity,
+      );
       _refrescarListas(created.id);
       state = const AsyncData(null);
       return created;
@@ -76,6 +92,46 @@ class ModeloItemController extends AsyncNotifier<void> {
   Future<int> modificarNombre(int? id, String nuevoNombre) async {
     final result = await _dao.modificarNombre(id!, nuevoNombre);
 
+    return result; // Retorna el número de filas afectadas (1 si fue exitoso)
+  }
+
+  // Método para actualizar solo la cantidad de un producto por su ID
+  Future<int> modificarCantidad(int? id, int nuevaCantidad) async {
+    final result = await _dao.modificarCantidad(id!, nuevaCantidad);
+    return result; // Retorna el número de filas afectadas (1 si fue exitoso)
+  }
+
+  // Método para actualizar solo el precio de un producto por su ID
+  Future<int> modificarPrecio(int? id, double nuevoPrecio) async {
+    final result = await _dao.modificarPrecio(id!, nuevoPrecio);
+    return result; // Retorna el número de filas afectadas (1 si fue exitoso)
+  }
+
+  // Método para actualizar solo la descripción de un producto por su ID
+  Future<int> modificarDescripcion(int? id, String nuevaDescripcion) async {
+    final result = await _dao.modificarDescripcion(id!, nuevaDescripcion);
+    return result; // Retorna el número de filas afectadas (1 si fue exitoso)
+  }
+
+  // Método para actualizar solo la categoría de un producto por su ID
+  Future<int> modificarCategoria(int? id, String nuevaCategoria) async {
+    final result = await _dao.modificarCategoria(id!, nuevaCategoria);
+    return result; // Retorna el número de filas afectadas (1 si fue exitoso)
+  }
+
+  Future<int> modificarImagen(int? id, String nuevaImagen) async {
+    final result = await _dao.modificarImagen(id!, nuevaImagen);
+    return result; // Retorna el número de filas afectadas (1 si fue exitoso)
+  }
+
+  // Método para actualizar solo el shoppingCartQuantity de un producto por su ID
+  Future<int> modificarShoppingCartQuantity(int? id, int nuevaCantidad) async {
+    final result = await _dao.modificarShoppingCartQuantity(id!, nuevaCantidad);
+    return result; // Retorna el número de filas afectadas (1 si fue exitoso)
+  }
+
+  Future<int> modificar(ModeloItem item) async {
+    final result = await _dao.modificar(item);
     return result; // Retorna el número de filas afectadas (1 si fue exitoso)
   }
 
