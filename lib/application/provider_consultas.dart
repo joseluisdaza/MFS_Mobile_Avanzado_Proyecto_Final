@@ -1,11 +1,12 @@
 // modelo_item_providers.dart
 import 'package:carro_2_fin_expo_sqlite/data/consultas.dart';
-import 'package:carro_2_fin_expo_sqlite/data/sqlite_db.dart';
+import 'package:carro_2_fin_expo_sqlite/database/database.dart';
+//import 'package:carro_2_fin_expo_sqlite/data/sqlite_db.dart';
 import 'package:carro_2_fin_expo_sqlite/models/modelo_item.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Provee la DB (ajústalo si ya lo tienes en otro archivo)
-final appDbProvider = Provider<AppDb>((ref) => AppDb());
+final appDbProvider = Provider<AppDatabase>((ref) => AppDatabase());
 
 // Provee el DAO
 final modeloItemDaoProvider = Provider<ModeloItemDao>((ref) {

@@ -1,14 +1,11 @@
-import 'package:carro_2_fin_expo_sqlite/data/sqlite_db.dart';
+import 'package:carro_2_fin_expo_sqlite/database/database.dart';
 import 'package:carro_2_fin_expo_sqlite/models/modelo_item.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:drift/drift.dart';
 
 class ModeloItemDao {
-  final AppDb _appDb;
-  static const _table = AppDb.table; // 'productos'
+  final AppDatabase _appDb;
 
   ModeloItemDao(this._appDb);
-
-  Future<Database> get _db async => _appDb.database;
 
   Future<ModeloItem> guardar(
     String nombre,
@@ -19,163 +16,255 @@ class ModeloItemDao {
     String? image,
     int shoppingCartQuantity,
   ) async {
-    final db = await _db;
-    final id = await db.insert(_table, <String, Object?>{
-      'name': nombre,
-      'inCart': 0,
-      'quantity': quantity < 0 ? 0 : quantity,
-      'price': price < 0 ? 0.0 : price,
-      'description': description,
-      'category': category,
-      'image': image,
-      'shoppingCartQuantity': shoppingCartQuantity < 0
-          ? 0
-          : shoppingCartQuantity,
-    }, conflictAlgorithm: ConflictAlgorithm.abort);
+    final id = await _appDb
+        .into(_appDb.products)
+        .insert(
+          ProductsCompanion(
+            name: Value(nombre),
+            inCart: const Value(false),
+            quantity: Value(quantity < 0 ? 0 : quantity),
+            price: Value(price < 0 ? 0.0 : price),
+            description: Value(description ?? ''),
+            category: Value(category ?? ''),
+            image: Value(image ?? ''),
+            shoppingCartQuantity: Value(
+              shoppingCartQuantity < 0 ? 0 : shoppingCartQuantity,
+            ),
+          ),
+        );
+
     return ModeloItem(
       id: id,
       name: nombre,
       inCart: false,
-      quantity: quantity,
-      price: price,
+      quantity: quantity < 0 ? 0 : quantity,
+      price: price < 0 ? 0.0 : price,
+      description: description,
+      category: category,
+      image: image,
+      shoppingCartQuantity: shoppingCartQuantity < 0 ? 0 : shoppingCartQuantity,
     );
   }
 
   Future<int> eliminar(int id) async {
-    final db = await _db;
-    return db.delete(_table, where: 'id = ?', whereArgs: [id]);
+    return (_appDb.delete(_appDb.products)..where((t) => t.id.equals(id))).go();
   }
 
   Future<ModeloItem?> buscar(int id) async {
-    final db = await _db;
-    final rows = await db.query(
-      _table,
-      where: 'id = ?',
-      whereArgs: [id],
-      limit: 1,
-    );
-    if (rows.isEmpty) return null;
-    return ModeloItem.fromMap(rows.first);
+    final query = _appDb.select(_appDb.products)..where((t) => t.id.equals(id));
+    final row = await query.getSingleOrNull();
+    return row != null ? _productToModeloItem(row) : null;
   }
 
   Future<int> modificar(ModeloItem item) async {
-    final db = await _db;
-    final updateMap = <String, Object?>{
-      'name': item.name,
-      'inCart': item.inCart ? 1 : 0,
-      'quantity': item.quantity < 0 ? 0 : item.quantity,
-      'price': item.price < 0 ? 0.0 : item.price,
-      'description': item.description,
-      'category': item.category,
-      'image': item.image,
-      'shoppingCartQuantity': item.shoppingCartQuantity < 0
-          ? 0
-          : item.shoppingCartQuantity,
-    };
-    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [item.id]);
+    final companion = ProductsCompanion(
+      id: Value(item.id!),
+      name: Value(item.name!),
+      inCart: Value(item.inCart),
+      quantity: Value(item.quantity < 0 ? 0 : item.quantity),
+      price: Value(item.price < 0 ? 0.0 : item.price),
+      description: Value(item.description ?? ''),
+      category: Value(item.category ?? ''),
+      image: Value(item.image ?? ''),
+      shoppingCartQuantity: Value(
+        item.shoppingCartQuantity < 0 ? 0 : item.shoppingCartQuantity,
+      ),
+    );
+
+    return (_appDb.update(
+      _appDb.products,
+    )..where((t) => t.id.equals(item.id!))).write(companion);
   }
 
   Future<int> modificarNombre(int id, String nuevoNombre) async {
-    final db = await _db;
-    final updateMap = <String, Object?>{'name': nuevoNombre};
-    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
+    return (_appDb.update(_appDb.products)..where((t) => t.id.equals(id)))
+        .write(ProductsCompanion(name: Value(nuevoNombre)));
   }
 
   Future<int> modificarCantidad(int id, int nuevaCantidad) async {
-    final db = await _db;
-    final updateMap = <String, Object?>{
-      'quantity': nuevaCantidad < 0 ? 0 : nuevaCantidad,
-    };
-    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
+    return (_appDb.update(
+      _appDb.products,
+    )..where((t) => t.id.equals(id))).write(
+      ProductsCompanion(quantity: Value(nuevaCantidad < 0 ? 0 : nuevaCantidad)),
+    );
   }
 
   Future<int> modificarPrecio(int id, double nuevoPrecio) async {
-    final db = await _db;
-    final updateMap = <String, Object?>{
-      'price': nuevoPrecio < 0 ? 0.0 : nuevoPrecio,
-    };
-    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
+    return (_appDb.update(
+      _appDb.products,
+    )..where((t) => t.id.equals(id))).write(
+      ProductsCompanion(price: Value(nuevoPrecio < 0 ? 0.0 : nuevoPrecio)),
+    );
   }
 
   Future<int> modificarDescripcion(int id, String? nuevaDescripcion) async {
-    final db = await _db;
-    final updateMap = <String, Object?>{'description': nuevaDescripcion};
-    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
+    return (_appDb.update(_appDb.products)..where((t) => t.id.equals(id)))
+        .write(ProductsCompanion(description: Value(nuevaDescripcion ?? '')));
   }
 
   Future<int> modificarCategoria(int id, String? nuevaCategoria) async {
-    final db = await _db;
-    final updateMap = <String, Object?>{'category': nuevaCategoria};
-    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
+    return (_appDb.update(_appDb.products)..where((t) => t.id.equals(id)))
+        .write(ProductsCompanion(category: Value(nuevaCategoria ?? '')));
   }
 
   Future<int> modificarImagen(int id, String? nuevaImagen) async {
-    final db = await _db;
-    final updateMap = <String, Object?>{'image': nuevaImagen};
-    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
+    return (_appDb.update(_appDb.products)..where((t) => t.id.equals(id)))
+        .write(ProductsCompanion(image: Value(nuevaImagen ?? '')));
   }
 
   Future<int> modificarShoppingCartQuantity(int id, int nuevaCantidad) async {
-    final db = await _db;
-    final updateMap = <String, Object?>{
-      'shoppingCartQuantity': nuevaCantidad < 0 ? 0 : nuevaCantidad,
-    };
-    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
+    return (_appDb.update(
+      _appDb.products,
+    )..where((t) => t.id.equals(id))).write(
+      ProductsCompanion(
+        shoppingCartQuantity: Value(nuevaCantidad < 0 ? 0 : nuevaCantidad),
+      ),
+    );
   }
 
   Future<int> modificarInCart(int id, bool inCart) async {
-    final db = await _db;
-    final updateMap = <String, Object?>{'inCart': inCart ? 1 : 0};
-    return db.update(_table, updateMap, where: 'id = ?', whereArgs: [id]);
+    return (_appDb.update(_appDb.products)..where((t) => t.id.equals(id)))
+        .write(ProductsCompanion(inCart: Value(inCart)));
   }
 
-  Future<List<ModeloItem>> listarTodo({String orderBy = 'id ASC'}) async {
-    final db = await _db;
-    final rows = await db.query(_table, orderBy: orderBy);
-    return rows.map(ModeloItem.fromMap).toList(growable: false);
+  Future<List<ModeloItem>> listarTodo({String orderBy = 'id'}) async {
+    final query = _appDb.select(_appDb.products);
+
+    switch (orderBy.toLowerCase()) {
+      case 'name asc':
+      case 'name':
+        query.orderBy([(t) => OrderingTerm.asc(t.name)]);
+        break;
+      case 'name desc':
+        query.orderBy([(t) => OrderingTerm.desc(t.name)]);
+        break;
+      case 'price asc':
+      case 'price':
+        query.orderBy([(t) => OrderingTerm.asc(t.price)]);
+        break;
+      case 'price desc':
+        query.orderBy([(t) => OrderingTerm.desc(t.price)]);
+        break;
+      case 'id desc':
+        query.orderBy([(t) => OrderingTerm.desc(t.id)]);
+        break;
+      default: // 'id asc' or 'id'
+        query.orderBy([(t) => OrderingTerm.asc(t.id)]);
+        break;
+    }
+
+    final rows = await query.get();
+    return rows.map(_productToModeloItem).toList();
   }
 
-  //Listar en el carrito
   Future<List<ModeloItem>> listarFiltrado(
     bool inCart, {
-    String orderBy = 'name COLLATE NOCASE ASC',
+    String orderBy = 'name',
   }) async {
-    final db = await _db;
-    final rows = await db.query(
-      _table,
-      where: 'inCart = ?',
-      whereArgs: [inCart ? 1 : 0],
-      orderBy: orderBy,
-    );
-    return rows.map(ModeloItem.fromMap).toList(growable: false);
+    final query = _appDb.select(_appDb.products)
+      ..where((t) => t.inCart.equals(inCart));
+
+    switch (orderBy.toLowerCase()) {
+      case 'name collate nocase asc':
+      case 'name asc':
+      case 'name':
+        query.orderBy([(t) => OrderingTerm.asc(t.name)]);
+        break;
+      case 'name desc':
+        query.orderBy([(t) => OrderingTerm.desc(t.name)]);
+        break;
+      case 'price asc':
+      case 'price':
+        query.orderBy([(t) => OrderingTerm.asc(t.price)]);
+        break;
+      case 'price desc':
+        query.orderBy([(t) => OrderingTerm.desc(t.price)]);
+        break;
+      default:
+        query.orderBy([(t) => OrderingTerm.asc(t.name)]);
+        break;
+    }
+
+    final rows = await query.get();
+    return rows.map(_productToModeloItem).toList();
   }
 
   Future<List<ModeloItem>> buscarPorNombre(
     String filtro, {
-    String orderBy = 'name COLLATE NOCASE ASC',
+    String orderBy = 'name',
   }) async {
-    final db = await _db;
-    final rows = await db.query(
-      _table,
-      where: 'name LIKE ?',
-      whereArgs: ['%$filtro%'],
-      orderBy: orderBy,
-    );
-    return rows.map(ModeloItem.fromMap).toList(growable: false);
+    final query = _appDb.select(_appDb.products)
+      ..where((t) => t.name.like('%$filtro%'));
+
+    switch (orderBy.toLowerCase()) {
+      case 'name collate nocase asc':
+      case 'name asc':
+      case 'name':
+        query.orderBy([(t) => OrderingTerm.asc(t.name)]);
+        break;
+      case 'name desc':
+        query.orderBy([(t) => OrderingTerm.desc(t.name)]);
+        break;
+      case 'price asc':
+      case 'price':
+        query.orderBy([(t) => OrderingTerm.asc(t.price)]);
+        break;
+      case 'price desc':
+        query.orderBy([(t) => OrderingTerm.desc(t.price)]);
+        break;
+      default:
+        query.orderBy([(t) => OrderingTerm.asc(t.name)]);
+        break;
+    }
+
+    final rows = await query.get();
+    return rows.map(_productToModeloItem).toList();
   }
 
   Future<List<ModeloItem>> buscarPorPrecio(
     double min,
     double max, {
-    String orderBy = 'price ASC',
+    String orderBy = 'price',
   }) async {
-    final db = await _db;
-    final rows = await db.query(
-      _table,
-      where: 'price BETWEEN ? AND ?',
-      whereArgs: [min, max],
-      orderBy: orderBy,
+    final query = _appDb.select(_appDb.products)
+      ..where((t) => t.price.isBetweenValues(min, max));
+
+    switch (orderBy.toLowerCase()) {
+      case 'price asc':
+      case 'price':
+        query.orderBy([(t) => OrderingTerm.asc(t.price)]);
+        break;
+      case 'price desc':
+        query.orderBy([(t) => OrderingTerm.desc(t.price)]);
+        break;
+      case 'name asc':
+      case 'name':
+        query.orderBy([(t) => OrderingTerm.asc(t.name)]);
+        break;
+      case 'name desc':
+        query.orderBy([(t) => OrderingTerm.desc(t.name)]);
+        break;
+      default:
+        query.orderBy([(t) => OrderingTerm.asc(t.price)]);
+        break;
+    }
+
+    final rows = await query.get();
+    return rows.map(_productToModeloItem).toList();
+  }
+
+  // Helper method to convert Product (from Drift) to ModeloItem
+  ModeloItem _productToModeloItem(Product product) {
+    return ModeloItem(
+      id: product.id,
+      name: product.name,
+      inCart: product.inCart,
+      quantity: product.quantity,
+      price: product.price,
+      description: product.description.isEmpty ? null : product.description,
+      category: product.category.isEmpty ? null : product.category,
+      image: product.image.isEmpty ? null : product.image,
+      shoppingCartQuantity: product.shoppingCartQuantity,
     );
-    return rows.map(ModeloItem.fromMap).toList(growable: false);
   }
 }
