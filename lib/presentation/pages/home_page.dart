@@ -1,6 +1,7 @@
 import 'package:carro_2_fin_expo_sqlite/application/manager_state.dart';
 import 'package:carro_2_fin_expo_sqlite/models/modelo_item.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/carga_datos.dart';
+import 'package:carro_2_fin_expo_sqlite/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,6 +17,19 @@ class HomePage extends ConsumerWidget {
       appBar: AppBar(
         title: Text('Mercado libre'),
         actions: [
+          IconButton(
+            icon: Icon(
+              ref.watch(themeModeProvider) == ThemeMode.dark
+                  ? Icons.dark_mode
+                  : Icons.light_mode,
+            ),
+            tooltip: 'Cambiar tema',
+            onPressed: () {
+              final current = ref.read(themeModeProvider);
+              ref.read(themeModeProvider.notifier).state =
+                  current == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+            },
+          ),
           DropdownButton(
             items: menuItems
                 .map((String e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -69,6 +83,7 @@ class HomePage extends ConsumerWidget {
           itemCount: carItems.length,
           itemBuilder: (context, index) {
             final item = carItems[index];
+            //final themeMode = ref.watch(themeModeProvider);
             final selectedMenu = ref.watch(menuProvider);
             Widget content = Card(
               elevation: 10,
