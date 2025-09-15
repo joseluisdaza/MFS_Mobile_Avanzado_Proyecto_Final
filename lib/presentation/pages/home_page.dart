@@ -275,7 +275,8 @@ class HomePage extends ConsumerWidget {
                 final carItems = ref.watch(fiteredCartListProvider);
                 final total = carItems.fold<double>(
                   0,
-                  (sum, item) => sum + item.price * (item.quantity ?? 1),
+                  (sum, item) =>
+                      sum + item.price * (item.shoppingCartQuantity ?? 1),
                 );
                 showDialog(
                   context: context,
@@ -291,7 +292,7 @@ class HomePage extends ConsumerWidget {
                               (item) => ListTile(
                                 title: Text(item.name ?? ''),
                                 trailing: Text(
-                                  'S/ ${item.price.toStringAsFixed(2)} x${item.quantity ?? 1}',
+                                  'S/ ${item.price.toStringAsFixed(2)} x${item.shoppingCartQuantity}',
                                 ),
                               ),
                             ),
@@ -315,7 +316,22 @@ class HomePage extends ConsumerWidget {
                         ),
                         ElevatedButton(
                           onPressed: () {
-                            // Aquí puedes agregar la lógica para confirmar el pago y actualizar inventario
+                            // Actualizar inventario: quantity = quantity - shoppingCartQuantity
+                            for (final item in carItems) {
+                              if (item.shoppingCartQuantity > 0) {
+                                ref
+                                    .read(managerProvider.notifier)
+                                    .addOrUpdateWith(
+                                      item.copyWith(
+                                        quantity:
+                                            (item.quantity -
+                                            item.shoppingCartQuantity),
+                                        shoppingCartQuantity: 0,
+                                        inCart: false,
+                                      ),
+                                    );
+                              }
+                            }
                             Navigator.of(context).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('¡Pago realizado!')),
