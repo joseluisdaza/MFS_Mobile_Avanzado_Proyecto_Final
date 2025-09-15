@@ -83,14 +83,20 @@ class HomePage extends ConsumerWidget {
           itemCount: carItems.length,
           itemBuilder: (context, index) {
             final item = carItems[index];
-            //final themeMode = ref.watch(themeModeProvider);
             final selectedMenu = ref.watch(menuProvider);
+
+            // Common product image widget
+            Widget productImage = _buildProductImage(item.image);
+
             Widget content = Card(
               elevation: 10,
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(
                   children: [
+                    // Product Image
+                    productImage,
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         item.id.toString(),
@@ -102,6 +108,7 @@ class HomePage extends ConsumerWidget {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
+                      flex: 2,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -114,14 +121,39 @@ class HomePage extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            item.price.toStringAsFixed(2),
-                            style: const TextStyle(fontSize: 16),
+                            'S/ ${item.price.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.green,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           if (selectedMenu == filtroInventario)
                             Text(
                               '${item.quantity} item(s)',
                               style: const TextStyle(fontSize: 16),
+                            ),
+                          // Show category and description if available
+                          if (item.category != null &&
+                              item.category!.isNotEmpty)
+                            Text(
+                              'Categoría: ${item.category}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          if (item.description != null &&
+                              item.description!.isNotEmpty)
+                            Text(
+                              item.description!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                         ],
                       ),
@@ -130,6 +162,7 @@ class HomePage extends ConsumerWidget {
                 ),
               ),
             );
+
             if (selectedMenu == filtroComprar) {
               return Padding(
                 padding: const EdgeInsets.all(5.0),
@@ -139,6 +172,9 @@ class HomePage extends ConsumerWidget {
                     padding: const EdgeInsets.all(8.0),
                     child: Row(
                       children: [
+                        // Product Image
+                        productImage,
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             item.id.toString(),
@@ -150,6 +186,7 @@ class HomePage extends ConsumerWidget {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
+                          flex: 2,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -162,9 +199,22 @@ class HomePage extends ConsumerWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                item.price.toStringAsFixed(2),
-                                style: const TextStyle(fontSize: 16),
+                                'S/ ${item.price.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
+                              if (item.category != null &&
+                                  item.category!.isNotEmpty)
+                                Text(
+                                  item.category!,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.blue,
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -200,6 +250,9 @@ class HomePage extends ConsumerWidget {
                     padding: const EdgeInsets.all(8.0),
                     child: Row(
                       children: [
+                        // Product Image
+                        productImage,
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             item.id.toString(),
@@ -211,6 +264,7 @@ class HomePage extends ConsumerWidget {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
+                          flex: 2,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -223,8 +277,12 @@ class HomePage extends ConsumerWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                item.price.toStringAsFixed(2),
-                                style: const TextStyle(fontSize: 16),
+                                'S/ ${item.price.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                               const SizedBox(height: 8),
                               Row(
@@ -305,9 +363,19 @@ class HomePage extends ConsumerWidget {
                           children: [
                             ...carItems.map(
                               (item) => ListTile(
+                                leading: _buildProductImage(
+                                  item.image,
+                                  size: 40,
+                                ),
                                 title: Text(item.name ?? ''),
+                                subtitle: Text(
+                                  '${item.shoppingCartQuantity} unidades',
+                                ),
                                 trailing: Text(
-                                  'S/ ${item.price.toStringAsFixed(2)} x${item.shoppingCartQuantity}',
+                                  'S/ ${(item.price * item.shoppingCartQuantity).toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -318,6 +386,7 @@ class HomePage extends ConsumerWidget {
                                 'Total: S/ ${total.toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 18,
                                 ),
                               ),
                             ),
@@ -366,6 +435,77 @@ class HomePage extends ConsumerWidget {
             return SizedBox.shrink();
           }
         },
+      ),
+    );
+  }
+
+  // Helper method to build product image widget
+  Widget _buildProductImage(String? imageUrl, {double size = 60}) {
+    if (imageUrl == null || imageUrl.isEmpty) {
+      // Default placeholder when no image URL
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[400]!, width: 1),
+        ),
+        child: Icon(
+          Icons.image_not_supported,
+          color: Colors.grey[600],
+          size: size * 0.4,
+        ),
+      );
+    }
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!, width: 1),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(7),
+        child: Image.network(
+          imageUrl,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              width: size,
+              height: size,
+              color: Colors.grey[200],
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                      : null,
+                  strokeWidth: 2,
+                ),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: Colors.red[100],
+                borderRadius: BorderRadius.circular(7),
+              ),
+              child: Icon(
+                Icons.broken_image,
+                color: Colors.red[300],
+                size: size * 0.4,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
