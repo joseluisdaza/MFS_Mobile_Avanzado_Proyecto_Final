@@ -1,0 +1,107 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:carro_2_fin_expo_sqlite/data/app_database.dart';
+import 'cart_event.dart';
+import 'cart_state.dart';
+
+class CartBloc extends Bloc<CartEvent, CartState> {
+  final AppDatabase database;
+
+  CartBloc({required this.database}) : super(CartInitial()) {
+    on<LoadCart>(_onLoadCart);
+    on<ProcessPayment>(_onProcessPayment);
+    on<ClearCart>(_onClearCart);
+    on<CalculateTotal>(_onCalculateTotal);
+  }
+
+  Future<void> _onLoadCart(LoadCart event, Emitter<CartState> emit) async {
+    emit(CartLoading());
+    try {
+      final cartItems = await (database.select(
+        database.modeloItems,
+      )..where((tbl) => tbl.inCart.equals(true))).get();
+
+      final total = _calculateTotal(cartItems);
+      final totalItems = _calculateTotalItems(cartItems);
+
+      emit(
+        CartLoaded(cartItems: cartItems, total: total, totalItems: totalItems),
+      );
+    } catch (e) {
+      emit(CartError('Error al cargar carrito: $e'));
+    }
+  }
+
+  Future<void> _onProcessPayment(
+    ProcessPayment event,
+    Emitter<CartState> emit,
+  ) async {
+    if (state is CartLoaded) {
+      final currentState = state as CartLoaded;
+
+      try {
+        // Actualizar inventario (reducir quantity por shoppingCartQuantity)
+        for (final item in currentState.cartItems) {
+          final newQuantity = item.quantity - item.shoppingCartQuantity;
+          final updatedItem = item.copyWith(
+            quantity: newQuantity >= 0 ? newQuantity : 0,
+            inCart: false,
+            shoppingCartQuantity: 0,
+          );
+
+          await database.update(database.modeloItems).replace(updatedItem);
+        }
+
+        emit(
+          PaymentProcessed('¡Pago realizado exitosamente!', currentState.total),
+        );
+
+        // Recargar el carrito (estará vacío ahora)
+        add(LoadCart());
+      } catch (e) {
+        emit(CartError('Error al procesar pago: $e'));
+      }
+    }
+  }
+
+  Future<void> _onClearCart(ClearCart event, Emitter<CartState> emit) async {
+    try {
+      // Limpiar todos los items del carrito
+      await database
+          .update(database.modeloItems)
+          .write(
+            ModeloItemsCompanion(
+              inCart: const Value(false),
+              shoppingCartQuantity: const Value(0),
+            ),
+          );
+
+      emit(const CartLoaded(cartItems: [], total: 0.0, totalItems: 0));
+    } catch (e) {
+      emit(CartError('Error al limpiar carrito: $e'));
+    }
+  }
+
+  Future<void> _onCalculateTotal(
+    CalculateTotal event,
+    Emitter<CartState> emit,
+  ) async {
+    if (state is CartLoaded) {
+      final currentState = state as CartLoaded;
+      final total = _calculateTotal(currentState.cartItems);
+      final totalItems = _calculateTotalItems(currentState.cartItems);
+
+      emit(currentState.copyWith(total: total, totalItems: totalItems));
+    }
+  }
+
+  double _calculateTotal(List<ModeloItem> items) {
+    return items.fold(
+      0.0,
+      (sum, item) => sum + (item.price * item.shoppingCartQuantity),
+    );
+  }
+
+  int _calculateTotalItems(List<ModeloItem> items) {
+    return items.fold(0, (sum, item) => sum + item.shoppingCartQuantity);
+  }
+}

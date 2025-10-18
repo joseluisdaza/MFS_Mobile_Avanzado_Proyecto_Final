@@ -1,595 +1,289 @@
-import 'package:carro_2_fin_expo_sqlite/application/manager_state.dart';
-import 'package:carro_2_fin_expo_sqlite/models/modelo_item.dart';
-import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/carga_datos.dart';
-import 'package:carro_2_fin_expo_sqlite/presentation/pages/edit_item_dialog.dart';
-import 'package:carro_2_fin_expo_sqlite/theme_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/products/products_bloc.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/products/products_event.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/products/products_state.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_bloc.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_event.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_state.dart';
+import 'package:carro_2_fin_expo_sqlite/theme_provider.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    List<ModeloItem> carItems = ref.watch(fiteredCartListProvider);
-
     return Scaffold(
-      backgroundColor: Colors.brown.shade200,
       appBar: AppBar(
-        title: Text('Mercado libre'),
+        title: const Text('Mercado Libre'),
         actions: [
           IconButton(
-            icon: Icon(
-              ref.watch(themeModeProvider) == ThemeMode.dark
-                  ? Icons.dark_mode
-                  : Icons.light_mode,
-            ),
-            tooltip: 'Cambiar tema',
+            icon: const Icon(Icons.brightness_6),
             onPressed: () {
-              final current = ref.read(themeModeProvider);
-              ref.read(themeModeProvider.notifier).state =
-                  current == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-            },
-          ),
-          DropdownButton(
-            items: menuItems
-                .map((String e) => DropdownMenuItem(value: e, child: Text(e)))
-                .toList(),
-            onChanged: (String? value) {
-              debugPrint('Selected menu item: $value');
-              ref.read(menuProvider.notifier).update((_) => value!);
+              ref
+                  .read(themeModeProvider.notifier)
+                  .state = ref.read(themeModeProvider) == ThemeMode.light
+                  ? ThemeMode.dark
+                  : ThemeMode.light;
             },
           ),
         ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          children: [
-            const DrawerHeader(
-              child: Text('Menú', style: TextStyle(fontSize: 24)),
-            ),
-            ListTile(
-              leading: const Icon(Icons.inventory),
-              title: const Text(filtroInventario),
-              selected: ref.watch(menuProvider) == filtroInventario,
-              onTap: () {
-                ref.read(menuProvider.notifier).state = filtroInventario;
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.shopping_cart),
-              title: const Text(filtroCarrito),
-              selected: ref.watch(menuProvider) == filtroCarrito,
-              onTap: () {
-                ref.read(menuProvider.notifier).state = filtroCarrito;
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.attach_money),
-              title: const Text(filtroComprar),
-              selected: ref.watch(menuProvider) == filtroComprar,
-              onTap: () {
-                ref.read(menuProvider.notifier).state = filtroComprar;
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(20),
-        child: ListView.builder(
-          itemCount: carItems.length,
-          itemBuilder: (context, index) {
-            final item = carItems[index];
-            final selectedMenu = ref.watch(menuProvider);
-
-            // Common product image widget
-            Widget productImage = _buildProductImage(item.image);
-
-            Widget content = Card(
-              elevation: 10,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  children: [
-                    // Product Image
-                    productImage,
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        item.id.toString(),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.name.toString(),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'S/ ${item.price.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.green,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          if (selectedMenu == filtroInventario)
-                            Text(
-                              '${item.quantity} item(s)',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          // Show category and description if available
-                          if (item.category != null &&
-                              item.category!.isNotEmpty)
-                            Text(
-                              'Categoría: ${item.category}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          if (item.description != null &&
-                              item.description!.isNotEmpty)
-                            Text(
-                              item.description!,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                        ],
-                      ),
-                    ),
-
-                    // Add edit button for inventory view
-                    if (selectedMenu == filtroInventario)
-                      PopupMenuButton<String>(
-                        onSelected: (String value) {
-                          if (value == 'edit') {
-                            _showEditItemDialog(context, ref, item);
-                          } else if (value == 'delete') {
-                            _showDeleteConfirmation(context, ref, item);
-                          }
-                        },
-                        itemBuilder: (BuildContext context) => [
-                          const PopupMenuItem<String>(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                Icon(Icons.edit, color: Colors.blue),
-                                SizedBox(width: 8),
-                                Text('Editar'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(Icons.delete, color: Colors.red),
-                                SizedBox(width: 8),
-                                Text('Eliminar'),
-                              ],
-                            ),
-                          ),
-                        ],
-                        icon: const Icon(Icons.more_vert),
-                      ),
-                  ],
-                ),
-              ),
-            );
-
-            if (selectedMenu == filtroComprar) {
-              return Padding(
-                padding: const EdgeInsets.all(5.0),
-                child: Card(
-                  elevation: 10,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      children: [
-                        // Product Image
-                        productImage,
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            item.id.toString(),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.name.toString(),
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'S/ ${item.price.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              if (item.category != null &&
-                                  item.category!.isNotEmpty)
-                                Text(
-                                  item.category!,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.blue,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        Checkbox(
-                          value: item.inCart,
-                          onChanged: (value) {
-                            ref
-                                .read(managerProvider.notifier)
-                                .toggleSelectedById(item.id);
-
-                            if (value == true) {
-                              ref
-                                  .read(managerProvider.notifier)
-                                  .actualizarCartQuantity(item.id, 1);
-                            } else {
-                              ref
-                                  .read(managerProvider.notifier)
-                                  .actualizarCartQuantity(item.id, 0);
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            } else if (selectedMenu == filtroCarrito) {
-              return Padding(
-                padding: const EdgeInsets.all(5.0),
-                child: Card(
-                  elevation: 10,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      children: [
-                        // Product Image
-                        productImage,
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            item.id.toString(),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.name.toString(),
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'S/ ${item.price.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.remove),
-                                    onPressed: () {
-                                      ref
-                                          .read(managerProvider.notifier)
-                                          .decrementCartQuantity(item.id);
-                                    },
-                                  ),
-                                  Text(
-                                    '${item.shoppingCartQuantity}',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.add),
-                                    onPressed: () {
-                                      ref
-                                          .read(managerProvider.notifier)
-                                          .incrementCartQuantity(item.id);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            } else {
-              return Padding(
-                padding: const EdgeInsets.all(5.0),
-                child: content,
-              );
-            }
-          },
-        ),
-      ),
-      floatingActionButton: Builder(
-        builder: (context) {
-          final selectedMenu = ref.watch(menuProvider);
-          if (selectedMenu == filtroInventario) {
-            return FloatingActionButton(
-              onPressed: () {
-                debugPrint('Josh: Agregando nuevo ítem...');
-                showItemDialog(context, ref);
-              },
-              tooltip: 'Agregar producto',
-              child: const Icon(Icons.add),
-            );
-          } else if (selectedMenu == filtroCarrito) {
-            return FloatingActionButton(
-              onPressed: () {
-                debugPrint('Josh: Pagando...');
-                final carItems = ref.watch(fiteredCartListProvider);
-                final total = carItems.fold<double>(
-                  0,
-                  (sum, item) =>
-                      sum + item.price * (item.shoppingCartQuantity ?? 1),
-                );
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: const Text('Resumen de compra'),
-                      content: SizedBox(
-                        width: double.maxFinite,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ...carItems.map(
-                              (item) => ListTile(
-                                leading: _buildProductImage(
-                                  item.image,
-                                  size: 40,
-                                ),
-                                title: Text(item.name ?? ''),
-                                subtitle: Text(
-                                  '${item.shoppingCartQuantity} unidades',
-                                ),
-                                trailing: Text(
-                                  'S/ ${(item.price * item.shoppingCartQuantity).toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Divider(),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                'Total: S/ ${total.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Cancelar'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            // Actualizar inventario: quantity = quantity - shoppingCartQuantity
-                            for (final item in carItems) {
-                              if (item.shoppingCartQuantity > 0) {
-                                ref
-                                    .read(managerProvider.notifier)
-                                    .addOrUpdateWith(
-                                      item.copyWith(
-                                        quantity:
-                                            (item.quantity -
-                                            item.shoppingCartQuantity),
-                                        shoppingCartQuantity: 0,
-                                        inCart: false,
-                                      ),
-                                    );
-                              }
-                            }
-                            Navigator.of(context).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('¡Pago realizado!')),
-                            );
-                          },
-                          child: const Text('Pagar'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-              tooltip: 'Pagar',
-              child: const Icon(Icons.payment),
-            );
-          } else {
-            return SizedBox.shrink();
+      drawer: _buildDrawer(context),
+      body: BlocBuilder<ProductsBloc, ProductsState>(
+        builder: (context, state) {
+          if (state is ProductsLoading) {
+            return const Center(child: CircularProgressIndicator());
           }
+
+          if (state is ProductsError) {
+            return Center(child: Text('Error: ${state.message}'));
+          }
+
+          if (state is ProductsLoaded) {
+            return _buildProductsList(context, state);
+          }
+
+          return const Center(child: Text('Cargando productos...'));
+        },
+      ),
+      floatingActionButton: _buildFloatingActionButtons(context),
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        children: [
+          const DrawerHeader(
+            child: Text('Menú', style: TextStyle(fontSize: 24)),
+          ),
+          ListTile(
+            leading: const Icon(Icons.inventory),
+            title: const Text('Inventario'),
+            onTap: () {
+              context.read<ProductsBloc>().add(
+                const FilterProducts('inventario'),
+              );
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.shopping_cart),
+            title: const Text('Carrito'),
+            onTap: () {
+              context.read<ProductsBloc>().add(const FilterProducts('carrito'));
+              context.read<CartBloc>().add(LoadCart());
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.shopping_bag),
+            title: const Text('Comprar'),
+            onTap: () {
+              context.read<ProductsBloc>().add(const FilterProducts('comprar'));
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductsList(BuildContext context, ProductsLoaded state) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: ListView.builder(
+        itemCount: state.filteredProducts.length,
+        itemBuilder: (context, index) {
+          final product = state.filteredProducts[index];
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  // Imagen del producto
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Image.network(
+                      product.image ?? 'https://via.placeholder.com/60',
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 60,
+                          height: 60,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.image),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Información del producto
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name ?? 'Sin nombre',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text('\$${product.price.toStringAsFixed(2)}'),
+                        if (state.currentFilter == 'inventario')
+                          Text('Saldo: ${product.quantity}'),
+                        if (product.description?.isNotEmpty == true)
+                          Text(
+                            product.description!,
+                            style: const TextStyle(fontSize: 12),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  // Controles según la vista
+                  _buildProductControls(context, product, state.currentFilter),
+                ],
+              ),
+            ),
+          );
         },
       ),
     );
   }
 
-  // Method to show edit item dialog
-  void _showEditItemDialog(
+  Widget _buildProductControls(
     BuildContext context,
-    WidgetRef ref,
-    ModeloItem item,
+    dynamic product,
+    String filter,
   ) {
-    showEditItemDialog(context, ref, item);
-  }
+    switch (filter) {
+      case 'comprar':
+        return Checkbox(
+          value: product.inCart,
+          onChanged: (value) {
+            context.read<ProductsBloc>().add(
+              ToggleCart(product.id!, value ?? false),
+            );
+          },
+        );
 
-  // Method to show delete confirmation dialog
-  void _showDeleteConfirmation(
-    BuildContext context,
-    WidgetRef ref,
-    ModeloItem item,
-  ) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirmar eliminación'),
-          content: Text(
-            '¿Estás seguro de que quieres eliminar "${item.name}"?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
+      case 'carrito':
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
               onPressed: () {
-                ref.read(managerProvider.notifier).removeItemById(item.id!);
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${item.name} eliminado')),
+                final newQuantity = (product.shoppingCartQuantity - 1).clamp(
+                  0,
+                  99,
+                );
+                context.read<ProductsBloc>().add(
+                  UpdateCartQuantity(product.id!, newQuantity),
                 );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Eliminar'),
+              icon: const Icon(Icons.remove),
+            ),
+            Text('${product.shoppingCartQuantity}'),
+            IconButton(
+              onPressed: () {
+                final newQuantity = (product.shoppingCartQuantity + 1).clamp(
+                  0,
+                  99,
+                );
+                context.read<ProductsBloc>().add(
+                  UpdateCartQuantity(product.id!, newQuantity),
+                );
+              },
+              icon: const Icon(Icons.add),
             ),
           ],
         );
+
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildFloatingActionButtons(BuildContext context) {
+    return BlocBuilder<ProductsBloc, ProductsState>(
+      builder: (context, state) {
+        if (state is ProductsLoaded) {
+          switch (state.currentFilter) {
+            case 'inventario':
+              return FloatingActionButton(
+                onPressed: () {
+                  // TODO: Abrir diálogo para agregar producto
+                },
+                child: const Icon(Icons.add),
+              );
+
+            case 'carrito':
+              return FloatingActionButton.extended(
+                onPressed: () => _showPaymentDialog(context),
+                icon: const Icon(Icons.payment),
+                label: const Text('Pagar'),
+              );
+
+            default:
+              return const SizedBox.shrink();
+          }
+        }
+        return const SizedBox.shrink();
       },
     );
   }
 
-  // Helper method to build product image widget
-  Widget _buildProductImage(String? imageUrl, {double size = 60}) {
-    if (imageUrl == null || imageUrl.isEmpty) {
-      // Default placeholder when no image URL
-      return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: Colors.grey[300],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[400]!, width: 1),
-        ),
-        child: Icon(
-          Icons.image_not_supported,
-          color: Colors.grey[600],
-          size: size * 0.4,
-        ),
-      );
-    }
+  void _showPaymentDialog(BuildContext context) {
+    context.read<CartBloc>().add(LoadCart());
 
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!, width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(7),
-        child: Image.network(
-          imageUrl,
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(
-              width: size,
-              height: size,
-              color: Colors.grey[200],
-              child: Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                      : null,
-                  strokeWidth: 2,
+    showDialog(
+      context: context,
+      builder: (context) => BlocConsumer<CartBloc, CartState>(
+        listener: (context, state) {
+          if (state is PaymentProcessed) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
+          }
+        },
+        builder: (context, state) {
+          if (state is CartLoaded) {
+            return AlertDialog(
+              title: const Text('Resumen de Compra'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Total de items: ${state.totalItems}'),
+                  Text('Total a pagar: \$${state.total.toStringAsFixed(2)}'),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
                 ),
-              ),
+                ElevatedButton(
+                  onPressed: () {
+                    context.read<CartBloc>().add(ProcessPayment());
+                  },
+                  child: const Text('Pagar'),
+                ),
+              ],
             );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                color: Colors.red[100],
-                borderRadius: BorderRadius.circular(7),
-              ),
-              child: Icon(
-                Icons.broken_image,
-                color: Colors.red[300],
-                size: size * 0.4,
-              ),
-            );
-          },
-        ),
+          }
+
+          return const AlertDialog(content: CircularProgressIndicator());
+        },
       ),
     );
   }
