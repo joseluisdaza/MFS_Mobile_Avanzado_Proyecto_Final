@@ -1,35 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/products/products_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/products/products_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/products/products_state.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_state.dart';
-import 'package:carro_2_fin_expo_sqlite/theme_provider.dart';
+import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/carga_datos.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('PROYECTO FINAL'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.brightness_6),
-            onPressed: () {
-              ref
-                  .read(themeModeProvider.notifier)
-                  .state = ref.read(themeModeProvider) == ThemeMode.light
-                  ? ThemeMode.dark
-                  : ThemeMode.light;
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('PROYECTO FINAL')),
       drawer: _buildDrawer(context),
       body: BlocBuilder<ProductsBloc, ProductsState>(
         builder: (context, state) {
@@ -221,7 +206,7 @@ class HomePage extends ConsumerWidget {
             case 'inventario':
               return FloatingActionButton(
                 onPressed: () {
-                  // TODO: Abrir diálogo para agregar producto
+                  showItemDialog(context);
                 },
                 child: const Icon(Icons.add),
               );

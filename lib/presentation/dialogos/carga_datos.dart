@@ -1,13 +1,12 @@
-import 'package:carro_2_fin_expo_sqlite/application/manager_state.dart';
-
-import 'package:carro_2_fin_expo_sqlite/models/modelo_item.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/products/products_bloc.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/products/products_event.dart';
+import 'package:carro_2_fin_expo_sqlite/database/database.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 Future<void> showItemDialog(
-  BuildContext context,
-  WidgetRef ref, {
-  ModeloItem? initial, // pásalo si quieres editar
+  BuildContext context, {
+  Product? initial, // pásalo si quieres editar
 }) async {
   final idCtrl = TextEditingController(text: initial?.id.toString() ?? '');
   final nombreCtrl = TextEditingController(text: initial?.name ?? '');
@@ -124,23 +123,27 @@ Future<void> showItemDialog(
                 'JOSH: quantity: ${quantityCtrl.text}, price: ${priceCtrl.text}',
               );
 
-              final added = ref
-                  .read(managerProvider.notifier)
-                  .addOrUpdateWith(
-                    ModeloItem(
-                      id: int.parse(idCtrl.text),
-                      name: nombreCtrl.text,
-                      inCart: false,
-                      quantity: int.parse(quantityCtrl.text),
-                      price: double.parse(priceCtrl.text),
-                      description: descripcionCtrl.text,
-                      category: categoryCtrl.text,
-                      image: imageCtrl.text,
-                      shoppingCartQuantity: 0,
-                    ),
-                  );
+              final product = Product(
+                id: int.parse(idCtrl.text),
+                name: nombreCtrl.text,
+                quantity: int.parse(quantityCtrl.text),
+                price: double.parse(priceCtrl.text),
+                description: descripcionCtrl.text,
+                category: categoryCtrl.text,
+                image: imageCtrl.text,
+                inCart: initial?.inCart ?? false,
+                shoppingCartQuantity: initial?.shoppingCartQuantity ?? 0,
+              );
 
-              Navigator.pop(ctx, added);
+              if (initial == null) {
+                // Adding new product
+                context.read<ProductsBloc>().add(AddProduct(product));
+              } else {
+                // Updating existing product
+                context.read<ProductsBloc>().add(UpdateProduct(product));
+              }
+
+              Navigator.pop(ctx, true);
             }
           },
           child: Text(initial == null ? 'Agregar' : 'Guardar'),
