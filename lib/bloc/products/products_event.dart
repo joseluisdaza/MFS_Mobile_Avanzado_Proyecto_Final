@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:carro_2_fin_expo_sqlite/data/app_database.dart';
+import 'package:carro_2_fin_expo_sqlite/database/database.dart';
 
 abstract class ProductsEvent extends Equatable {
   const ProductsEvent();
@@ -20,7 +20,7 @@ class FilterProducts extends ProductsEvent {
 }
 
 class AddProduct extends ProductsEvent {
-  final ModeloItem product;
+  final Product product;
 
   const AddProduct(this.product);
 
@@ -29,7 +29,7 @@ class AddProduct extends ProductsEvent {
 }
 
 class UpdateProduct extends ProductsEvent {
-  final ModeloItem product;
+  final Product product;
 
   const UpdateProduct(this.product);
 

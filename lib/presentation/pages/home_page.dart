@@ -16,7 +16,7 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mercado Libre'),
+        title: const Text('PROYECTO FINAL'),
         actions: [
           IconButton(
             icon: const Icon(Icons.brightness_6),

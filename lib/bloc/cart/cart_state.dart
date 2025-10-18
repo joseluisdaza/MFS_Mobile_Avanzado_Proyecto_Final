@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:carro_2_fin_expo_sqlite/data/app_database.dart';
+import 'package:carro_2_fin_expo_sqlite/database/database.dart';
 
 abstract class CartState extends Equatable {
   const CartState();
@@ -13,7 +13,7 @@ class CartInitial extends CartState {}
 class CartLoading extends CartState {}
 
 class CartLoaded extends CartState {
-  final List<ModeloItem> cartItems;
+  final List<Product> cartItems;
   final double total;
   final int totalItems;
 
@@ -27,7 +27,7 @@ class CartLoaded extends CartState {
   List<Object?> get props => [cartItems, total, totalItems];
 
   CartLoaded copyWith({
-    List<ModeloItem>? cartItems,
+    List<Product>? cartItems,
     double? total,
     int? totalItems,
   }) {

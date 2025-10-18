@@ -38,6 +38,13 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteProduct(int id) =>
       (delete(products)..where((p) => p.id.equals(id))).go();
+
+  // Additional methods for cart functionality
+  Future<List<Product>> getCartProducts() =>
+      (select(products)..where((p) => p.inCart.equals(true))).get();
+
+  Future<List<Product>> getAvailableProducts() =>
+      (select(products)..where((p) => p.quantity.isBiggerThanValue(0))).get();
 }
 
 LazyDatabase _openConnection() {

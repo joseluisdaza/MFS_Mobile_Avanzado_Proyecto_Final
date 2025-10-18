@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:carro_2_fin_expo_sqlite/data/app_database.dart';
+import 'package:drift/drift.dart';
+import 'package:carro_2_fin_expo_sqlite/database/database.dart';
 import 'cart_event.dart';
 import 'cart_state.dart';
 
@@ -16,9 +17,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
   Future<void> _onLoadCart(LoadCart event, Emitter<CartState> emit) async {
     emit(CartLoading());
     try {
-      final cartItems = await (database.select(
-        database.modeloItems,
-      )..where((tbl) => tbl.inCart.equals(true))).get();
+      final cartItems = await database.getCartProducts();
 
       final total = _calculateTotal(cartItems);
       final totalItems = _calculateTotalItems(cartItems);
@@ -48,7 +47,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
             shoppingCartQuantity: 0,
           );
 
-          await database.update(database.modeloItems).replace(updatedItem);
+          await database.updateProduct(updatedItem);
         }
 
         emit(
@@ -66,14 +65,14 @@ class CartBloc extends Bloc<CartEvent, CartState> {
   Future<void> _onClearCart(ClearCart event, Emitter<CartState> emit) async {
     try {
       // Limpiar todos los items del carrito
-      await database
-          .update(database.modeloItems)
-          .write(
-            ModeloItemsCompanion(
-              inCart: const Value(false),
-              shoppingCartQuantity: const Value(0),
-            ),
-          );
+      await (database.update(
+        database.products,
+      )..where((p) => p.inCart.equals(true))).write(
+        ProductsCompanion(
+          inCart: const Value(false),
+          shoppingCartQuantity: const Value(0),
+        ),
+      );
 
       emit(const CartLoaded(cartItems: [], total: 0.0, totalItems: 0));
     } catch (e) {
@@ -94,14 +93,14 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     }
   }
 
-  double _calculateTotal(List<ModeloItem> items) {
+  double _calculateTotal(List<Product> items) {
     return items.fold(
       0.0,
       (sum, item) => sum + (item.price * item.shoppingCartQuantity),
     );
   }
 
-  int _calculateTotalItems(List<ModeloItem> items) {
+  int _calculateTotalItems(List<Product> items) {
     return items.fold(0, (sum, item) => sum + item.shoppingCartQuantity);
   }
 }

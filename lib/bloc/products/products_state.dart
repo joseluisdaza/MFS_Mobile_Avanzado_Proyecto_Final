@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:carro_2_fin_expo_sqlite/data/app_database.dart';
+import 'package:carro_2_fin_expo_sqlite/database/database.dart';
 
 abstract class ProductsState extends Equatable {
   const ProductsState();
@@ -13,8 +13,8 @@ class ProductsInitial extends ProductsState {}
 class ProductsLoading extends ProductsState {}
 
 class ProductsLoaded extends ProductsState {
-  final List<ModeloItem> products;
-  final List<ModeloItem> filteredProducts;
+  final List<Product> products;
+  final List<Product> filteredProducts;
   final String currentFilter;
 
   const ProductsLoaded({
@@ -27,8 +27,8 @@ class ProductsLoaded extends ProductsState {
   List<Object?> get props => [products, filteredProducts, currentFilter];
 
   ProductsLoaded copyWith({
-    List<ModeloItem>? products,
-    List<ModeloItem>? filteredProducts,
+    List<Product>? products,
+    List<Product>? filteredProducts,
     String? currentFilter,
   }) {
     return ProductsLoaded(

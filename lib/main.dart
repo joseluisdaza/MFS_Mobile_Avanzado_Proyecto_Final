@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:carro_2_fin_expo_sqlite/data/app_database.dart';
+import 'package:carro_2_fin_expo_sqlite/database/database.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/products/products_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_bloc.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/products/products_event.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/pages/home_page.dart';
 import 'package:carro_2_fin_expo_sqlite/theme_provider.dart';
 
@@ -20,24 +21,18 @@ class MainApp extends ConsumerWidget {
 
     return MultiBlocProvider(
       providers: [
-        // Proveedor de la base de datos
-        Provider<AppDatabase>(
-          create: (context) => AppDatabase(),
-          dispose: (context, db) => db.close(),
-        ),
         // BLoC de productos
         BlocProvider<ProductsBloc>(
           create: (context) =>
-              ProductsBloc(database: context.read<AppDatabase>())
-                ..add(LoadProducts()),
+              ProductsBloc(database: AppDatabase())..add(LoadProducts()),
         ),
         // BLoC del carrito
         BlocProvider<CartBloc>(
-          create: (context) => CartBloc(database: context.read<AppDatabase>()),
+          create: (context) => CartBloc(database: AppDatabase()),
         ),
       ],
       child: MaterialApp(
-        title: 'Carrito de Compras',
+        title: 'Carrito de Compras By Josh',
         themeMode: themeMode,
         theme: ThemeData.light(),
         darkTheme: ThemeData.dark(),
