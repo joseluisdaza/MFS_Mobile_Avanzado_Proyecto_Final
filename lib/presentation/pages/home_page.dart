@@ -476,23 +476,9 @@ class HomePage extends StatelessWidget {
                       items: state.stores.map((store) {
                         return DropdownMenuItem(
                           value: store,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                store.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                store.location,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            store.name,
+                            style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
                         );
                       }).toList(),
