@@ -128,7 +128,27 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
         shoppingCartQuantity: event.inCart ? 1 : 0,
       );
 
-      add(UpdateProduct(updatedProduct));
+      try {
+        // Actualizar en la base de datos
+        await database.updateProduct(updatedProduct);
+
+        // Actualizar en el estado local
+        final updatedProducts = currentState.products.map((p) {
+          return p.id == event.productId ? updatedProduct : p;
+        }).toList();
+
+        emit(
+          currentState.copyWith(
+            products: updatedProducts,
+            filteredProducts: _filterProductsByType(
+              updatedProducts,
+              currentState.currentFilter,
+            ),
+          ),
+        );
+      } catch (e) {
+        emit(ProductsError('Error al actualizar carrito: $e'));
+      }
     }
   }
 
@@ -146,7 +166,27 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
         shoppingCartQuantity: event.quantity,
       );
 
-      add(UpdateProduct(updatedProduct));
+      try {
+        // Actualizar en la base de datos
+        await database.updateProduct(updatedProduct);
+
+        // Actualizar en el estado local
+        final updatedProducts = currentState.products.map((p) {
+          return p.id == event.productId ? updatedProduct : p;
+        }).toList();
+
+        emit(
+          currentState.copyWith(
+            products: updatedProducts,
+            filteredProducts: _filterProductsByType(
+              updatedProducts,
+              currentState.currentFilter,
+            ),
+          ),
+        );
+      } catch (e) {
+        emit(ProductsError('Error al actualizar cantidad: $e'));
+      }
     }
   }
 
