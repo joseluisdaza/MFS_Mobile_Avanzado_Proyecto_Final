@@ -23,7 +23,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('PROYECTO FINAL v005')),
+      appBar: AppBar(title: const Text('PROYECTO FINAL v006')),
       drawer: _buildDrawer(context),
       body: BlocBuilder<ProductsBloc, ProductsState>(
         builder: (context, state) {
@@ -138,7 +138,7 @@ class HomePage extends StatelessWidget {
           // Reportes de Ventas - Solo Admin y Gerente
           if (_canAccessReports())
             ListTile(
-              leading: const Icon(Icons.analytics, color: Colors.green),
+              leading: const Icon(Icons.analytics),
               title: const Text('Reportes de Ventas'),
               onTap: () {
                 Navigator.pop(context);
