@@ -5,8 +5,10 @@ import 'package:carro_2_fin_expo_sqlite/database/database.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/products/products_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/stores/stores_bloc.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/users/users_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/products/products_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/stores/stores_event.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/users/users_event.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/pages/home_page.dart';
 import 'package:carro_2_fin_expo_sqlite/theme_provider.dart';
 
@@ -36,6 +38,11 @@ class MainApp extends ConsumerWidget {
         BlocProvider<StoresBloc>(
           create: (context) =>
               StoresBloc(database: AppDatabase())..add(LoadStores()),
+        ),
+        // BLoC de usuarios
+        BlocProvider<UsersBloc>(
+          create: (context) =>
+              UsersBloc(database: AppDatabase())..add(const LoadUsers()),
         ),
       ],
       child: MaterialApp(

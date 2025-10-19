@@ -8,6 +8,7 @@ import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_state.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/carga_datos.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/pages/stores_page.dart';
+import 'package:carro_2_fin_expo_sqlite/presentation/pages/users_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -80,6 +81,17 @@ class HomePage extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const StoresPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.people),
+            title: const Text('Usuarios'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const UsersPage()),
               );
             },
           ),
