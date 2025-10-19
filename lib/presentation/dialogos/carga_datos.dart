@@ -20,7 +20,11 @@ Future<void> showItemDialog(
     text: initial?.description ?? '',
   );
   final categoryCtrl = TextEditingController(text: initial?.category ?? '');
-  final imageCtrl = TextEditingController(text: initial?.image ?? '');
+  final imageCtrl = TextEditingController(
+    text:
+        initial?.image ??
+        'https://cdn.awardcenter.com/images/Release/Hinda_HiRes/',
+  );
 
   final formKey = GlobalKey<FormState>();
 
@@ -36,8 +40,14 @@ Future<void> showItemDialog(
           children: [
             TextFormField(
               controller: idCtrl,
-              autofocus: true,
-              decoration: const InputDecoration(labelText: 'ID'),
+              autofocus: initial == null, // Solo autofocus en modo agregar
+              readOnly: initial != null, // Solo lectura en modo editar
+              decoration: InputDecoration(
+                labelText: 'ID',
+                suffixIcon: initial != null
+                    ? const Icon(Icons.lock_outline, size: 16)
+                    : null,
+              ),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Ingrese un ID' : null,
             ),
@@ -99,7 +109,12 @@ Future<void> showItemDialog(
             const SizedBox(height: 12),
             TextFormField(
               controller: imageCtrl,
-              decoration: const InputDecoration(labelText: 'Imagen (URL)'),
+              decoration: const InputDecoration(
+                labelText: 'Imagen (URL)',
+                hintText: 'Ej: 103016.jpg',
+                helperText:
+                    'Solo ingrese el nombre del archivo (ej: 103016.jpg)',
+              ),
               validator: (v) => (v == null || v.trim().isEmpty)
                   ? 'Ingrese una URL de imagen'
                   : null,
@@ -123,6 +138,19 @@ Future<void> showItemDialog(
                 'JOSH: quantity: ${quantityCtrl.text}, price: ${priceCtrl.text}',
               );
 
+              // Construir URL completa de imagen si es necesario
+              String imageUrl = imageCtrl.text.trim();
+              const baseUrl =
+                  'https://cdn.awardcenter.com/images/Release/Hinda_HiRes/';
+
+              // Si no es una URL completa (no empieza con http) y no está vacía
+              if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
+                // Si no empieza con la URL base, agregarla
+                if (!imageUrl.startsWith(baseUrl)) {
+                  imageUrl = baseUrl + imageUrl;
+                }
+              }
+
               final product = Product(
                 id: int.parse(idCtrl.text),
                 name: nombreCtrl.text,
@@ -130,7 +158,7 @@ Future<void> showItemDialog(
                 price: double.parse(priceCtrl.text),
                 description: descripcionCtrl.text,
                 category: categoryCtrl.text,
-                image: imageCtrl.text,
+                image: imageUrl,
                 inCart: initial?.inCart ?? false,
                 shoppingCartQuantity: initial?.shoppingCartQuantity ?? 0,
               );

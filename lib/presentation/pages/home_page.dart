@@ -84,59 +84,69 @@ class HomePage extends StatelessWidget {
         itemBuilder: (context, index) {
           final product = state.filteredProducts[index];
           return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  // Imagen del producto
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8.0),
-                    child: Image.network(
-                      product.image ?? 'https://via.placeholder.com/60',
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 60,
-                          height: 60,
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.image),
-                        );
-                      },
+            child: InkWell(
+              onTap: state.currentFilter == 'inventario'
+                  ? () => showItemDialog(context, initial: product)
+                  : null,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    // Imagen del producto
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8.0),
+                      child: Image.network(
+                        product.image ?? 'https://via.placeholder.com/60',
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 60,
+                            height: 60,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.image),
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
+                    const SizedBox(width: 12),
 
-                  // Información del producto
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product.name ?? 'Sin nombre',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text('\$${product.price.toStringAsFixed(2)}'),
-                        if (state.currentFilter == 'inventario')
-                          Text('Saldo: ${product.quantity}'),
-                        if (product.description?.isNotEmpty == true)
+                    // Información del producto
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            product.description!,
-                            style: const TextStyle(fontSize: 12),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                            product.name ?? 'Sin nombre',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                      ],
+                          Text('\$${product.price.toStringAsFixed(2)}'),
+                          if (state.currentFilter == 'inventario')
+                            Text('Saldo: ${product.quantity}'),
+                          if (product.description?.isNotEmpty == true)
+                            Text(
+                              product.description!,
+                              style: const TextStyle(fontSize: 12),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
 
-                  // Controles según la vista
-                  _buildProductControls(context, product, state.currentFilter),
-                ],
+                    // Controles según la vista
+                    _buildProductControls(
+                      context,
+                      product,
+                      state.currentFilter,
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -191,6 +201,15 @@ class HomePage extends StatelessWidget {
               icon: const Icon(Icons.add),
             ),
           ],
+        );
+
+      case 'inventario':
+        return IconButton(
+          onPressed: () {
+            showItemDialog(context, initial: product);
+          },
+          icon: const Icon(Icons.edit),
+          tooltip: 'Editar producto',
         );
 
       default:

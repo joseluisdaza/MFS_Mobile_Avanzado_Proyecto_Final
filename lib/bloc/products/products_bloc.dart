@@ -24,11 +24,18 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
     emit(ProductsLoading());
     try {
       final products = await database.getAllProducts();
+
+      // Preservar el filtro actual si existe
+      String currentFilter = 'inventario'; // default
+      if (state is ProductsLoaded) {
+        currentFilter = (state as ProductsLoaded).currentFilter;
+      }
+
       emit(
         ProductsLoaded(
           products: products,
-          filteredProducts: products,
-          currentFilter: 'inventario',
+          filteredProducts: _filterProductsByType(products, currentFilter),
+          currentFilter: currentFilter,
         ),
       );
     } catch (e) {
@@ -42,25 +49,10 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
   ) async {
     if (state is ProductsLoaded) {
       final currentState = state as ProductsLoaded;
-      List<Product> filtered;
-
-      switch (event.filter) {
-        case 'inventario':
-          filtered = currentState.products;
-          break;
-        case 'carrito':
-          filtered = currentState.products
-              .where((item) => item.inCart == true)
-              .toList();
-          break;
-        case 'comprar':
-          filtered = currentState.products
-              .where((item) => item.quantity > 0)
-              .toList();
-          break;
-        default:
-          filtered = currentState.products;
-      }
+      final filtered = _filterProductsByType(
+        currentState.products,
+        event.filter,
+      );
 
       emit(
         currentState.copyWith(
@@ -155,6 +147,19 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
       );
 
       add(UpdateProduct(updatedProduct));
+    }
+  }
+
+  List<Product> _filterProductsByType(List<Product> products, String filter) {
+    switch (filter) {
+      case 'inventario':
+        return products;
+      case 'carrito':
+        return products.where((item) => item.inCart == true).toList();
+      case 'comprar':
+        return products.where((item) => item.quantity > 0).toList();
+      default:
+        return products;
     }
   }
 }
