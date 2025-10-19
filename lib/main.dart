@@ -7,6 +7,7 @@ import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/stores/stores_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/users/users_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/auth/auth_bloc.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/reports/reports_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/products/products_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/stores/stores_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/users/users_event.dart';
@@ -76,6 +77,15 @@ class MainApp extends StatelessWidget {
                 listen: false,
               ),
             )..add(CheckAuthStatus()),
+          ),
+          // BLoC de reportes
+          BlocProvider<ReportsBloc>(
+            create: (context) => ReportsBloc(
+              database: provider_pkg.Provider.of<AppDatabase>(
+                context,
+                listen: false,
+              ),
+            ),
           ),
         ],
         child: MaterialApp(

@@ -443,6 +443,312 @@ class AppDatabase extends _$AppDatabase {
       }
     }
   }
+
+  // === MÉTODOS DE REPORTES ===
+
+  // Obtener reporte de ventas con filtros
+  Future<List<Map<String, dynamic>>> getSalesReport({
+    DateTime? startDate,
+    DateTime? endDate,
+    int? storeId,
+    int? sellerId,
+  }) async {
+    // Construir la consulta base
+    final query = select(purchaseHistory).join([
+      innerJoin(stores, stores.id.equalsExp(purchaseHistory.storeId)),
+      innerJoin(users, users.id.equalsExp(purchaseHistory.sellerId)),
+    ]);
+
+    // Aplicar filtros
+    var conditions = <Expression<bool>>[];
+
+    if (startDate != null) {
+      conditions.add(
+        purchaseHistory.purchaseDate.isBiggerOrEqualValue(startDate),
+      );
+    }
+
+    if (endDate != null) {
+      final endOfDay = DateTime(
+        endDate.year,
+        endDate.month,
+        endDate.day,
+        23,
+        59,
+        59,
+      );
+      conditions.add(
+        purchaseHistory.purchaseDate.isSmallerOrEqualValue(endOfDay),
+      );
+    }
+
+    if (storeId != null) {
+      conditions.add(purchaseHistory.storeId.equals(storeId));
+    }
+
+    if (sellerId != null) {
+      conditions.add(purchaseHistory.sellerId.equals(sellerId));
+    }
+
+    if (conditions.isNotEmpty) {
+      Expression<bool> finalCondition = conditions.first;
+      for (int i = 1; i < conditions.length; i++) {
+        finalCondition = finalCondition & conditions[i];
+      }
+      query.where(finalCondition);
+    }
+
+    // Ordenar por fecha descendente
+    query.orderBy([OrderingTerm.desc(purchaseHistory.purchaseDate)]);
+
+    final results = await query.get();
+
+    final salesData = <Map<String, dynamic>>[];
+
+    for (final row in results) {
+      final purchase = row.readTable(purchaseHistory);
+      final store = row.readTable(stores);
+      final seller = row.readTable(users);
+
+      // Obtener items de la compra
+      final items = await getPurchaseItems(purchase.id);
+      final itemsWithProducts = <Map<String, dynamic>>[];
+
+      for (final item in items) {
+        final product = await (select(
+          products,
+        )..where((p) => p.id.equals(item.productId))).getSingle();
+        itemsWithProducts.add({
+          'productName': product.name,
+          'quantity': item.quantity,
+          'unitPrice': item.unitPrice,
+          'totalPrice': item.totalPrice,
+        });
+      }
+
+      salesData.add({
+        'purchaseId': purchase.purchaseId,
+        'purchaseDate': purchase.purchaseDate,
+        'storeName': store.name,
+        'sellerName': seller.fullName,
+        'totalAmount': purchase.totalAmount,
+        'itemsCount': items.length,
+        'items': itemsWithProducts,
+      });
+    }
+
+    return salesData;
+  }
+
+  // Obtener resumen de ventas
+  Future<Map<String, dynamic>> getSalesSummary({
+    DateTime? startDate,
+    DateTime? endDate,
+    int? storeId,
+    int? sellerId,
+  }) async {
+    // Consulta base para totales
+    final query = selectOnly(purchaseHistory);
+
+    // Aplicar los mismos filtros
+    var conditions = <Expression<bool>>[];
+
+    if (startDate != null) {
+      conditions.add(
+        purchaseHistory.purchaseDate.isBiggerOrEqualValue(startDate),
+      );
+    }
+
+    if (endDate != null) {
+      final endOfDay = DateTime(
+        endDate.year,
+        endDate.month,
+        endDate.day,
+        23,
+        59,
+        59,
+      );
+      conditions.add(
+        purchaseHistory.purchaseDate.isSmallerOrEqualValue(endOfDay),
+      );
+    }
+
+    if (storeId != null) {
+      conditions.add(purchaseHistory.storeId.equals(storeId));
+    }
+
+    if (sellerId != null) {
+      conditions.add(purchaseHistory.sellerId.equals(sellerId));
+    }
+
+    if (conditions.isNotEmpty) {
+      Expression<bool> finalCondition = conditions.first;
+      for (int i = 1; i < conditions.length; i++) {
+        finalCondition = finalCondition & conditions[i];
+      }
+      query.where(finalCondition);
+    }
+
+    // Agregar columnas para estadísticas
+    query.addColumns([
+      purchaseHistory.id.count(),
+      purchaseHistory.totalAmount.sum(),
+      purchaseHistory.totalAmount.avg(),
+    ]);
+
+    final result = await query.getSingle();
+
+    final totalSales = result.read(purchaseHistory.id.count()) ?? 0;
+    final totalRevenue = result.read(purchaseHistory.totalAmount.sum()) ?? 0.0;
+    final averageTicket = result.read(purchaseHistory.totalAmount.avg()) ?? 0.0;
+
+    // Obtener producto más vendido
+    String topProduct = 'N/A';
+    int totalItems = 0;
+
+    // Query para obtener producto más vendido
+    final productQuery = select(purchaseItems).join([
+      innerJoin(products, products.id.equalsExp(purchaseItems.productId)),
+      innerJoin(
+        purchaseHistory,
+        purchaseHistory.id.equalsExp(purchaseItems.purchaseHistoryId),
+      ),
+    ]);
+
+    if (conditions.isNotEmpty) {
+      Expression<bool> finalCondition = conditions.first;
+      for (int i = 1; i < conditions.length; i++) {
+        finalCondition = finalCondition & conditions[i];
+      }
+      productQuery.where(finalCondition);
+    }
+
+    final productResults = await productQuery.get();
+    final productSales = <String, int>{};
+
+    for (final row in productResults) {
+      final item = row.readTable(purchaseItems);
+      final product = row.readTable(products);
+
+      productSales[product.name] =
+          (productSales[product.name] ?? 0) + item.quantity;
+      totalItems += item.quantity;
+    }
+
+    if (productSales.isNotEmpty) {
+      final topEntry = productSales.entries.reduce(
+        (a, b) => a.value > b.value ? a : b,
+      );
+      topProduct = topEntry.key;
+    }
+
+    // Obtener tienda con más ventas
+    String topStore = 'N/A';
+    final storeQuery = select(
+      purchaseHistory,
+    ).join([innerJoin(stores, stores.id.equalsExp(purchaseHistory.storeId))]);
+
+    if (conditions.isNotEmpty) {
+      Expression<bool> finalCondition = conditions.first;
+      for (int i = 1; i < conditions.length; i++) {
+        finalCondition = finalCondition & conditions[i];
+      }
+      storeQuery.where(finalCondition);
+    }
+
+    final storeResults = await storeQuery.get();
+    final storeSales = <String, double>{};
+
+    for (final row in storeResults) {
+      final purchase = row.readTable(purchaseHistory);
+      final store = row.readTable(stores);
+
+      storeSales[store.name] =
+          (storeSales[store.name] ?? 0.0) + purchase.totalAmount;
+    }
+
+    if (storeSales.isNotEmpty) {
+      final topStoreEntry = storeSales.entries.reduce(
+        (a, b) => a.value > b.value ? a : b,
+      );
+      topStore = topStoreEntry.key;
+    }
+
+    // Obtener mejor vendedor
+    String topSeller = 'N/A';
+    final sellerQuery = select(
+      purchaseHistory,
+    ).join([innerJoin(users, users.id.equalsExp(purchaseHistory.sellerId))]);
+
+    if (conditions.isNotEmpty) {
+      Expression<bool> finalCondition = conditions.first;
+      for (int i = 1; i < conditions.length; i++) {
+        finalCondition = finalCondition & conditions[i];
+      }
+      sellerQuery.where(finalCondition);
+    }
+
+    final sellerResults = await sellerQuery.get();
+    final sellerSales = <String, double>{};
+
+    for (final row in sellerResults) {
+      final purchase = row.readTable(purchaseHistory);
+      final seller = row.readTable(users);
+
+      sellerSales[seller.fullName] =
+          (sellerSales[seller.fullName] ?? 0.0) + purchase.totalAmount;
+    }
+
+    if (sellerSales.isNotEmpty) {
+      final topSellerEntry = sellerSales.entries.reduce(
+        (a, b) => a.value > b.value ? a : b,
+      );
+      topSeller = topSellerEntry.key;
+    }
+
+    return {
+      'totalSales': totalSales,
+      'totalRevenue': totalRevenue,
+      'averageTicket': averageTicket,
+      'totalItems': totalItems,
+      'topSellingProduct': topProduct,
+      'topPerformingStore': topStore,
+      'topSeller': topSeller,
+    };
+  }
+
+  // Obtener ventas del día actual
+  Future<List<Map<String, dynamic>>> getTodaysSales() {
+    final today = DateTime.now();
+    final startOfDay = DateTime(today.year, today.month, today.day);
+    return getSalesReport(startDate: startOfDay, endDate: today);
+  }
+
+  // Obtener ventas de la semana actual
+  Future<List<Map<String, dynamic>>> getWeeklySales() {
+    final now = DateTime.now();
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final startOfDay = DateTime(
+      startOfWeek.year,
+      startOfWeek.month,
+      startOfWeek.day,
+    );
+    return getSalesReport(startDate: startOfDay, endDate: now);
+  }
+
+  // Obtener ventas del mes actual
+  Future<List<Map<String, dynamic>>> getMonthlySales() {
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1);
+    return getSalesReport(startDate: startOfMonth, endDate: now);
+  }
+
+  // Obtener ventas del año actual
+  Future<List<Map<String, dynamic>>> getYearlySales() {
+    final now = DateTime.now();
+    final startOfYear = DateTime(now.year, 1, 1);
+    return getSalesReport(startDate: startOfYear, endDate: now);
+  }
 }
 
 LazyDatabase _openConnection() {

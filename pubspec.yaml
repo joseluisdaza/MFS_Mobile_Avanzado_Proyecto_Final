@@ -20,6 +20,9 @@ dependencies:
   bloc: ^8.1.2
   equatable: ^2.0.5  # Para comparar estados fácilmente
   provider: ^6.0.5  # Para compartir instancia única de base de datos
+  
+  # Para formato de fechas
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:

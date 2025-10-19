@@ -13,6 +13,7 @@ import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/product_dialog.dar
 import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/inventory_dialog.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/pages/stores_page.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/pages/users_page.dart';
+import 'package:carro_2_fin_expo_sqlite/presentation/pages/sales_reports_page.dart';
 
 class HomePage extends StatelessWidget {
   final User user;
@@ -134,6 +135,22 @@ class HomePage extends StatelessWidget {
               },
             ),
 
+          // Reportes de Ventas - Solo Admin y Gerente
+          if (_canAccessReports())
+            ListTile(
+              leading: const Icon(Icons.analytics, color: Colors.green),
+              title: const Text('Reportes de Ventas'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SalesReportsPage(),
+                  ),
+                );
+              },
+            ),
+
           const Divider(),
 
           // Cerrar Sesión
@@ -163,6 +180,10 @@ class HomePage extends StatelessWidget {
   }
 
   bool _canAccessUsers() {
+    return user.role == 'admin' || user.role == 'manager';
+  }
+
+  bool _canAccessReports() {
     return user.role == 'admin' || user.role == 'manager';
   }
 
