@@ -18,7 +18,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('PROYECTO FINAL')),
+      appBar: AppBar(title: const Text('PROYECTO FINAL v003')),
       drawer: _buildDrawer(context),
       body: BlocBuilder<ProductsBloc, ProductsState>(
         builder: (context, state) {

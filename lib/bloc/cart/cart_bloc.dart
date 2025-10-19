@@ -151,14 +151,20 @@ class CartBloc extends Bloc<CartEvent, CartState> {
   ) async {
     if (state is CartWithStoresLoaded) {
       final currentState = state as CartWithStoresLoaded;
-      final selectedStore = currentState.stores.firstWhere(
-        (store) => store.id == event.storeId,
-      );
 
-      emit(currentState.copyWith(selectedStore: selectedStore));
+      try {
+        final selectedStore = currentState.stores.firstWhere(
+          (store) => store.id == event.storeId,
+          orElse: () => throw Exception('Tienda no encontrada'),
+        );
 
-      // Validar stock automáticamente al seleccionar tienda
-      add(ValidateStockAvailability(event.storeId));
+        emit(currentState.copyWith(selectedStore: selectedStore));
+
+        // Validar stock automáticamente al seleccionar tienda
+        add(ValidateStockAvailability(event.storeId));
+      } catch (e) {
+        emit(CartError('Error al seleccionar tienda: $e'));
+      }
     }
   }
 
@@ -173,13 +179,19 @@ class CartBloc extends Bloc<CartEvent, CartState> {
         List<String> stockIssues = [];
         bool hasEnoughStock = true;
 
+        // Obtener el inventario de la tienda una sola vez
+        final storeInventory = await database.getProductsWithStoreInventory(
+          event.storeId,
+        );
+
         for (final cartItem in currentState.cartItems) {
-          final storeInventory = await database.getProductsWithStoreInventory(
-            event.storeId,
-          );
           final productInventory = storeInventory.firstWhere(
             (inv) => (inv['product'] as Product).id == cartItem.id,
-            orElse: () => {'storeQuantity': 0},
+            orElse: () => <String, Object>{
+              'product': cartItem,
+              'storeQuantity': 0,
+              'hasInventory': false,
+            },
           );
 
           final availableQuantity = productInventory['storeQuantity'] as int;
@@ -221,13 +233,19 @@ class CartBloc extends Bloc<CartEvent, CartState> {
         // Validar stock antes de procesar pago
         List<Map<String, dynamic>> purchaseItems = [];
 
+        // Obtener el inventario de la tienda una sola vez
+        final storeInventory = await database.getProductsWithStoreInventory(
+          event.storeId,
+        );
+
         for (final cartItem in currentState.cartItems) {
-          final storeInventory = await database.getProductsWithStoreInventory(
-            event.storeId,
-          );
           final productInventory = storeInventory.firstWhere(
             (inv) => (inv['product'] as Product).id == cartItem.id,
-            orElse: () => {'storeQuantity': 0},
+            orElse: () => <String, Object>{
+              'product': cartItem,
+              'storeQuantity': 0,
+              'hasInventory': false,
+            },
           );
 
           final availableQuantity = productInventory['storeQuantity'] as int;
