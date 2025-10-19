@@ -258,6 +258,9 @@ class HomePage extends StatelessWidget {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text(state.message)));
+
+            // Recargar productos para actualizar el inventario
+            context.read<ProductsBloc>().add(LoadProducts());
           }
         },
         builder: (context, state) {
