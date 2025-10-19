@@ -6,6 +6,8 @@ import 'package:carro_2_fin_expo_sqlite/bloc/products/products_state.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_state.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/auth/auth_bloc.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/auth/auth_event.dart';
 import 'package:carro_2_fin_expo_sqlite/database/database.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/product_dialog.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/inventory_dialog.dart';
@@ -13,12 +15,14 @@ import 'package:carro_2_fin_expo_sqlite/presentation/pages/stores_page.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/pages/users_page.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  final User user;
+
+  const HomePage({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('PROYECTO FINAL v003')),
+      appBar: AppBar(title: const Text('PROYECTO FINAL v005')),
       drawer: _buildDrawer(context),
       body: BlocBuilder<ProductsBloc, ProductsState>(
         builder: (context, state) {
@@ -45,19 +49,30 @@ class HomePage extends StatelessWidget {
     return Drawer(
       child: ListView(
         children: [
-          const DrawerHeader(
-            child: Text('Menú', style: TextStyle(fontSize: 24)),
+          DrawerHeader(
+            decoration: BoxDecoration(color: Theme.of(context).primaryColor),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.person, size: 48, color: Colors.white),
+                const SizedBox(height: 8),
+                Text(
+                  user.fullName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  _getRoleDisplayName(user.role),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+              ],
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.inventory),
-            title: const Text('Inventario'),
-            onTap: () {
-              context.read<ProductsBloc>().add(
-                const FilterProducts('inventario'),
-              );
-              Navigator.pop(context);
-            },
-          ),
+
+          // Carrito - Todos los usuarios pueden acceder
           ListTile(
             leading: const Icon(Icons.shopping_cart),
             title: const Text('Carrito'),
@@ -67,6 +82,8 @@ class HomePage extends StatelessWidget {
               Navigator.pop(context);
             },
           ),
+
+          // Comprar - Todos los usuarios pueden acceder
           ListTile(
             leading: const Icon(Icons.shopping_bag),
             title: const Text('Comprar'),
@@ -75,31 +92,91 @@ class HomePage extends StatelessWidget {
               Navigator.pop(context);
             },
           ),
+
+          // Inventario - Solo Admin y Gerente
+          if (_canAccessInventory())
+            ListTile(
+              leading: const Icon(Icons.inventory),
+              title: const Text('Inventario'),
+              onTap: () {
+                context.read<ProductsBloc>().add(
+                  const FilterProducts('inventario'),
+                );
+                Navigator.pop(context);
+              },
+            ),
+
+          // Tiendas - Solo Admin y Gerente
+          if (_canAccessStores())
+            ListTile(
+              leading: const Icon(Icons.store),
+              title: const Text('Tiendas'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const StoresPage()),
+                );
+              },
+            ),
+
+          // Usuarios - Solo Admin y Gerente
+          if (_canAccessUsers())
+            ListTile(
+              leading: const Icon(Icons.people),
+              title: const Text('Usuarios'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const UsersPage()),
+                );
+              },
+            ),
+
+          const Divider(),
+
+          // Cerrar Sesión
           ListTile(
-            leading: const Icon(Icons.store),
-            title: const Text('Tiendas'),
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text(
+              'Cerrar Sesión',
+              style: TextStyle(color: Colors.red),
+            ),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const StoresPage()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.people),
-            title: const Text('Usuarios'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const UsersPage()),
-              );
+              context.read<AuthBloc>().add(LogoutRequested());
             },
           ),
         ],
       ),
     );
+  }
+
+  // Helper methods para permisos
+  bool _canAccessInventory() {
+    return user.role == 'admin' || user.role == 'manager';
+  }
+
+  bool _canAccessStores() {
+    return user.role == 'admin' || user.role == 'manager';
+  }
+
+  bool _canAccessUsers() {
+    return user.role == 'admin' || user.role == 'manager';
+  }
+
+  String _getRoleDisplayName(String role) {
+    switch (role) {
+      case 'admin':
+        return 'Administrador';
+      case 'manager':
+        return 'Gerente';
+      case 'seller':
+        return 'Vendedor';
+      default:
+        return 'Usuario';
+    }
   }
 
   Widget _buildProductsList(BuildContext context, ProductsLoaded state) {

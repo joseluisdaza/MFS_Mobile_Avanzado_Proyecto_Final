@@ -149,6 +149,12 @@ class AppDatabase extends _$AppDatabase {
     users,
   )..where((u) => u.username.equals(username))).getSingleOrNull();
 
+  Future<User?> getUserByCredentials(String username, String password) =>
+      (select(users)..where(
+            (u) => u.username.equals(username) & u.password.equals(password),
+          ))
+          .getSingleOrNull();
+
   // === STORE INVENTORY CRUD ===
   Future<List<StoreInventoryData>> getInventoryByStore(int storeId) =>
       (select(storeInventory)..where((si) => si.storeId.equals(storeId))).get();
@@ -333,38 +339,71 @@ class AppDatabase extends _$AppDatabase {
   // === MÉTODOS DE INICIALIZACIÓN ===
 
   Future<void> initializeDefaultData() async {
-    // Verificar si ya hay datos
+    // Verificar si ya hay tiendas
     final storeCount = await (selectOnly(
       stores,
     )..addColumns([stores.id.count()])).getSingle();
 
+    int? store1Id;
+    int? store2Id;
+
     if (storeCount.read(stores.id.count()) == 0) {
       // Crear tiendas por defecto
-      final store1Id = await insertStore(
+      store1Id = await insertStore(
         StoresCompanion.insert(
           name: 'Tienda Centro',
           location: 'Centro Comercial Cala Cala',
         ),
       );
 
-      final store2Id = await insertStore(
+      store2Id = await insertStore(
         StoresCompanion.insert(
           name: 'Tienda Norte',
           location: 'Zona Norte - Av. Libertador 123',
         ),
       );
+    }
 
-      // Crear usuario vendedor por defecto
-      await insertUser(
+    // Verificar si ya hay usuarios
+    final userCount = await (selectOnly(
+      users,
+    )..addColumns([users.id.count()])).getSingle();
+
+    if (userCount.read(users.id.count()) == 0) {
+      print('DEBUG: Creando usuarios de prueba...');
+
+      // Crear usuarios de prueba
+      final adminId = await insertUser(
         UsersCompanion.insert(
           username: 'admin',
-          password: '123456', // En producción debería estar hasheada
+          password: 'admin123',
           fullName: 'Administrador del Sistema',
           role: const Value('admin'),
         ),
       );
+      print('DEBUG: Usuario admin creado con ID: $adminId');
 
-      await insertUser(
+      final managerId = await insertUser(
+        UsersCompanion.insert(
+          username: 'manager',
+          password: 'manager123',
+          fullName: 'Gerente de Tienda',
+          role: const Value('manager'),
+        ),
+      );
+      print('DEBUG: Usuario manager creado con ID: $managerId');
+
+      final sellerId = await insertUser(
+        UsersCompanion.insert(
+          username: 'seller',
+          password: 'seller123',
+          fullName: 'Vendedor de Mostrador',
+          role: const Value('seller'),
+        ),
+      );
+      print('DEBUG: Usuario seller creado con ID: $sellerId');
+
+      final vendedorId = await insertUser(
         UsersCompanion.insert(
           username: 'vendedor1',
           password: '123456',
@@ -372,11 +411,19 @@ class AppDatabase extends _$AppDatabase {
           role: const Value('seller'),
         ),
       );
+      print('DEBUG: Usuario vendedor1 creado con ID: $vendedorId');
+      print('DEBUG: Todos los usuarios de prueba creados exitosamente');
+    } else {
+      print(
+        'DEBUG: Los usuarios ya existen, total: ${userCount.read(users.id.count())}',
+      );
+    }
 
-      // Si hay productos existentes, crear inventario inicial para ambas tiendas
+    // Si se crearon tiendas nuevas y hay productos, crear inventario inicial
+    if (store1Id != null && store2Id != null) {
       final products = await getAllProducts();
       for (final product in products) {
-        // Inventario para tienda sur (cantidad inicial fija)
+        // Inventario para tienda centro (cantidad inicial fija)
         await insertStoreInventory(
           StoreInventoryCompanion.insert(
             storeId: store1Id,

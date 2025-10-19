@@ -6,10 +6,12 @@ import 'package:carro_2_fin_expo_sqlite/bloc/products/products_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/stores/stores_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/users/users_bloc.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/auth/auth_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/products/products_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/stores/stores_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/users/users_event.dart';
-import 'package:carro_2_fin_expo_sqlite/presentation/pages/home_page.dart';
+import 'package:carro_2_fin_expo_sqlite/bloc/auth/auth_event.dart';
+import 'package:carro_2_fin_expo_sqlite/presentation/widgets/auth_wrapper.dart';
 
 void main() {
   runApp(const MainApp());
@@ -66,13 +68,22 @@ class MainApp extends StatelessWidget {
               ),
             )..add(const LoadUsers()),
           ),
+          // BLoC de autenticación
+          BlocProvider<AuthBloc>(
+            create: (context) => AuthBloc(
+              database: provider_pkg.Provider.of<AppDatabase>(
+                context,
+                listen: false,
+              ),
+            )..add(CheckAuthStatus()),
+          ),
         ],
         child: MaterialApp(
           title: 'Carrito de Compras By Josh',
           themeMode: ThemeMode.system, // Usa el tema del sistema por defecto
           theme: ThemeData.light(),
           darkTheme: ThemeData.dark(),
-          home: const HomePage(),
+          home: const AuthWrapper(),
         ),
       ),
     );
