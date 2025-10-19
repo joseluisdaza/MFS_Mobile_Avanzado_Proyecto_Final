@@ -48,34 +48,6 @@ class ProductsError extends ProductsState {
   List<Object?> get props => [message];
 }
 
-class ProductsWithStoreInventoryLoaded extends ProductsState {
-  final List<Map<String, dynamic>> productsWithInventory;
-  final List<Store> stores;
-  final String currentFilter;
-
-  const ProductsWithStoreInventoryLoaded({
-    required this.productsWithInventory,
-    required this.stores,
-    required this.currentFilter,
-  });
-
-  @override
-  List<Object?> get props => [productsWithInventory, stores, currentFilter];
-
-  ProductsWithStoreInventoryLoaded copyWith({
-    List<Map<String, dynamic>>? productsWithInventory,
-    List<Store>? stores,
-    String? currentFilter,
-  }) {
-    return ProductsWithStoreInventoryLoaded(
-      productsWithInventory:
-          productsWithInventory ?? this.productsWithInventory,
-      stores: stores ?? this.stores,
-      currentFilter: currentFilter ?? this.currentFilter,
-    );
-  }
-}
-
 class ProductOperationSuccess extends ProductsState {
   final String message;
 

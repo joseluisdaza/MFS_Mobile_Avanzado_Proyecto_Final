@@ -65,22 +65,3 @@ class UpdateCartQuantity extends ProductsEvent {
   @override
   List<Object?> get props => [productId, quantity];
 }
-
-class LoadProductsWithStoreInventory extends ProductsEvent {
-  const LoadProductsWithStoreInventory();
-}
-
-class UpdateStoreInventoryFromProducts extends ProductsEvent {
-  final int storeId;
-  final int productId;
-  final int quantity;
-
-  const UpdateStoreInventoryFromProducts(
-    this.storeId,
-    this.productId,
-    this.quantity,
-  );
-
-  @override
-  List<Object?> get props => [storeId, productId, quantity];
-}

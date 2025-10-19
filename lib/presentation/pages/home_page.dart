@@ -7,10 +7,9 @@ import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_state.dart';
 import 'package:carro_2_fin_expo_sqlite/database/database.dart';
-import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/carga_datos.dart';
+import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/product_dialog.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/pages/stores_page.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/pages/users_page.dart';
-import 'package:carro_2_fin_expo_sqlite/presentation/pages/inventory_by_stores_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -56,19 +55,6 @@ class HomePage extends StatelessWidget {
                 const FilterProducts('inventario'),
               );
               Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.inventory_2),
-            title: const Text('Inventario por Sucursal'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const InventoryByStoresPage(),
-                ),
-              );
             },
           ),
           ListTile(
@@ -125,7 +111,7 @@ class HomePage extends StatelessWidget {
           return Card(
             child: InkWell(
               onTap: state.currentFilter == 'inventario'
-                  ? () => showItemDialog(context, initial: product)
+                  ? () => _showProductDialog(context, product)
                   : null,
               borderRadius: BorderRadius.circular(12),
               child: Padding(
@@ -245,7 +231,7 @@ class HomePage extends StatelessWidget {
       case 'inventario':
         return IconButton(
           onPressed: () {
-            showItemDialog(context, initial: product);
+            _showProductDialog(context, product);
           },
           icon: const Icon(Icons.edit),
           tooltip: 'Editar producto',
@@ -264,7 +250,7 @@ class HomePage extends StatelessWidget {
             case 'inventario':
               return FloatingActionButton(
                 onPressed: () {
-                  showItemDialog(context);
+                  _showProductDialog(context);
                 },
                 child: const Icon(Icons.add),
               );
@@ -531,6 +517,13 @@ class HomePage extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+
+  void _showProductDialog(BuildContext context, [Product? product]) {
+    showDialog(
+      context: context,
+      builder: (context) => ProductDialog(product: product),
     );
   }
 }
