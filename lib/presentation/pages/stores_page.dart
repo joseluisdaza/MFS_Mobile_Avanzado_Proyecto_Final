@@ -22,6 +22,13 @@ class StoresPage extends StatelessWidget {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text(state.message)));
+          } else if (state is ProductTransferred) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green,
+              ),
+            );
           } else if (state is StoresError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -275,79 +282,139 @@ class StoresPage extends StatelessWidget {
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      product.image,
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 50,
-                          height: 50,
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.image),
-                        );
-                      },
-                    ),
-                  ),
-                  title: Text(
-                    product.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
                     children: [
-                      Text('Categoría: ${product.category}'),
-                      Text('Precio: \$${product.price.toStringAsFixed(2)}'),
+                      Row(
+                        children: [
+                          // Imagen del producto
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              product.image,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 50,
+                                  height: 50,
+                                  color: Colors.grey[300],
+                                  child: const Icon(Icons.image),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+
+                          // Información del producto
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  product.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                Text('Categoría: ${product.category}'),
+                                Text(
+                                  'Precio: \$${product.price.toStringAsFixed(2)}',
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Indicador de stock
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: storeQuantity > 0
+                                  ? Colors.green[100]
+                                  : Colors.red[100],
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Stock',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: storeQuantity > 0
+                                        ? Colors.green[700]
+                                        : Colors.red[700],
+                                  ),
+                                ),
+                                Text(
+                                  '$storeQuantity',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: storeQuantity > 0
+                                        ? Colors.green[700]
+                                        : Colors.red[700],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Botones de acción
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => _showEditInventoryDialog(
+                                context,
+                                state.selectedStore!.id,
+                                product,
+                                storeQuantity,
+                              ),
+                              icon: const Icon(Icons.edit, size: 18),
+                              label: const Text('Editar'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: storeQuantity > 0
+                                  ? () => _showTransferDialog(
+                                      context,
+                                      state.selectedStore!,
+                                      product,
+                                      storeQuantity,
+                                      state.stores,
+                                    )
+                                  : null,
+                              icon: const Icon(Icons.swap_horiz, size: 18),
+                              label: const Text('Transferir'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: storeQuantity > 0
+                                    ? Colors.orange
+                                    : Colors.grey,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: storeQuantity > 0
-                          ? Colors.green[100]
-                          : Colors.red[100],
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Stock',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: storeQuantity > 0
-                                ? Colors.green[700]
-                                : Colors.red[700],
-                          ),
-                        ),
-                        Text(
-                          '$storeQuantity',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: storeQuantity > 0
-                                ? Colors.green[700]
-                                : Colors.red[700],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  onTap: () {
-                    _showEditInventoryDialog(
-                      context,
-                      state.selectedStore!.id,
-                      product,
-                      storeQuantity,
-                    );
-                  },
                 ),
               );
             },
@@ -412,6 +479,175 @@ class StoresPage extends StatelessWidget {
       const SnackBar(
         content: Text(
           'Funcionalidad de agregar producto pendiente de implementar',
+        ),
+      ),
+    );
+  }
+
+  void _showTransferDialog(
+    BuildContext context,
+    Store fromStore,
+    Product product,
+    int currentQuantity,
+    List<Store> allStores,
+  ) {
+    final quantityController = TextEditingController();
+    Store? selectedToStore;
+
+    // Filtrar tiendas excluyendo la tienda actual
+    final availableStores = allStores
+        .where((store) => store.id != fromStore.id)
+        .toList();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Transferir Producto'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Información del producto
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Producto: ${product.name}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text('Tienda origen: ${fromStore.name}'),
+                      Text('Cantidad disponible: $currentQuantity'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Selector de tienda destino
+                const Text(
+                  'Tienda destino:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<Store>(
+                  initialValue: selectedToStore,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Seleccione tienda destino',
+                  ),
+                  items: availableStores.map((store) {
+                    return DropdownMenuItem(
+                      value: store,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            store.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            store.location,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (store) {
+                    setState(() {
+                      selectedToStore = store;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Cantidad a transferir
+                const Text(
+                  'Cantidad a transferir:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: quantityController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    hintText: 'Máximo: $currentQuantity',
+                    helperText: 'Ingrese la cantidad a transferir',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: selectedToStore != null
+                  ? () {
+                      final transferQuantity = int.tryParse(
+                        quantityController.text,
+                      );
+
+                      if (transferQuantity == null || transferQuantity <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Por favor ingrese una cantidad válida',
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (transferQuantity > currentQuantity) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Cantidad máxima disponible: $currentQuantity',
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      context.read<StoresBloc>().add(
+                        TransferProductBetweenStores(
+                          fromStoreId: fromStore.id,
+                          toStoreId: selectedToStore!.id,
+                          productId: product.id,
+                          quantity: transferQuantity,
+                        ),
+                      );
+
+                      Navigator.of(dialogContext).pop();
+                    }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: selectedToStore != null
+                    ? Colors.orange
+                    : Colors.grey,
+              ),
+              child: Text(
+                selectedToStore != null ? 'Transferir' : 'Seleccione destino',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
         ),
       ),
     );

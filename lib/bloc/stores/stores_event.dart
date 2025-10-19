@@ -52,3 +52,20 @@ class AddProductToStore extends StoresEvent {
   @override
   List<Object?> get props => [storeId, productId, quantity];
 }
+
+class TransferProductBetweenStores extends StoresEvent {
+  final int fromStoreId;
+  final int toStoreId;
+  final int productId;
+  final int quantity;
+
+  const TransferProductBetweenStores({
+    required this.fromStoreId,
+    required this.toStoreId,
+    required this.productId,
+    required this.quantity,
+  });
+
+  @override
+  List<Object?> get props => [fromStoreId, toStoreId, productId, quantity];
+}

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart' as provider_pkg;
 import 'package:carro_2_fin_expo_sqlite/database/database.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/products/products_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_bloc.dart';
@@ -10,47 +10,70 @@ import 'package:carro_2_fin_expo_sqlite/bloc/products/products_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/stores/stores_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/users/users_event.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/pages/home_page.dart';
-import 'package:carro_2_fin_expo_sqlite/theme_provider.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MainApp()));
+  runApp(const MainApp());
 }
 
-class MainApp extends ConsumerWidget {
+class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
-
-    return MultiBlocProvider(
+  Widget build(BuildContext context) {
+    return provider_pkg.MultiProvider(
       providers: [
-        // BLoC de productos
-        BlocProvider<ProductsBloc>(
-          create: (context) =>
-              ProductsBloc(database: AppDatabase())..add(LoadProducts()),
-        ),
-        // BLoC del carrito
-        BlocProvider<CartBloc>(
-          create: (context) => CartBloc(database: AppDatabase()),
-        ),
-        // BLoC de tiendas
-        BlocProvider<StoresBloc>(
-          create: (context) =>
-              StoresBloc(database: AppDatabase())..add(LoadStores()),
-        ),
-        // BLoC de usuarios
-        BlocProvider<UsersBloc>(
-          create: (context) =>
-              UsersBloc(database: AppDatabase())..add(const LoadUsers()),
+        // Única instancia de la base de datos compartida
+        provider_pkg.Provider<AppDatabase>(
+          create: (_) => AppDatabase(),
+          dispose: (_, database) => database.close(),
         ),
       ],
-      child: MaterialApp(
-        title: 'Carrito de Compras By Josh',
-        themeMode: themeMode,
-        theme: ThemeData.light(),
-        darkTheme: ThemeData.dark(),
-        home: const HomePage(),
+      child: MultiBlocProvider(
+        providers: [
+          // BLoC de productos
+          BlocProvider<ProductsBloc>(
+            create: (context) => ProductsBloc(
+              database: provider_pkg.Provider.of<AppDatabase>(
+                context,
+                listen: false,
+              ),
+            )..add(LoadProducts()),
+          ),
+          // BLoC del carrito
+          BlocProvider<CartBloc>(
+            create: (context) => CartBloc(
+              database: provider_pkg.Provider.of<AppDatabase>(
+                context,
+                listen: false,
+              ),
+            ),
+          ),
+          // BLoC de tiendas
+          BlocProvider<StoresBloc>(
+            create: (context) => StoresBloc(
+              database: provider_pkg.Provider.of<AppDatabase>(
+                context,
+                listen: false,
+              ),
+            )..add(LoadStores()),
+          ),
+          // BLoC de usuarios
+          BlocProvider<UsersBloc>(
+            create: (context) => UsersBloc(
+              database: provider_pkg.Provider.of<AppDatabase>(
+                context,
+                listen: false,
+              ),
+            )..add(const LoadUsers()),
+          ),
+        ],
+        child: MaterialApp(
+          title: 'Carrito de Compras By Josh',
+          themeMode: ThemeMode.system, // Usa el tema del sistema por defecto
+          theme: ThemeData.light(),
+          darkTheme: ThemeData.dark(),
+          home: const HomePage(),
+        ),
       ),
     );
   }

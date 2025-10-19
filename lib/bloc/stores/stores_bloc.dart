@@ -13,6 +13,7 @@ class StoresBloc extends Bloc<StoresEvent, StoresState> {
     on<LoadStoreInventory>(_onLoadStoreInventory);
     on<UpdateStoreInventoryQuantity>(_onUpdateStoreInventoryQuantity);
     on<AddProductToStore>(_onAddProductToStore);
+    on<TransferProductBetweenStores>(_onTransferProductBetweenStores);
   }
 
   Future<void> _onLoadStores(
@@ -106,6 +107,90 @@ class StoresBloc extends Bloc<StoresEvent, StoresState> {
       add(LoadStoreInventory(event.storeId));
     } catch (e) {
       emit(StoresError('Error al agregar producto: $e'));
+    }
+  }
+
+  Future<void> _onTransferProductBetweenStores(
+    TransferProductBetweenStores event,
+    Emitter<StoresState> emit,
+  ) async {
+    try {
+      // Verificar que hay suficiente stock en la tienda de origen
+      final fromStoreInventory = await database.getProductsWithStoreInventory(
+        event.fromStoreId,
+      );
+      final productInFromStore = fromStoreInventory.firstWhere(
+        (item) => (item['product'] as Product).id == event.productId,
+        orElse: () => {'storeQuantity': 0},
+      );
+
+      final availableQuantity = productInFromStore['storeQuantity'] as int;
+
+      if (availableQuantity < event.quantity) {
+        emit(
+          StoresError(
+            'Stock insuficiente en tienda origen. Disponible: $availableQuantity, solicitado: ${event.quantity}',
+          ),
+        );
+        return;
+      }
+
+      // Realizar la transferencia como una transacción
+      await database.transaction(() async {
+        // Reducir cantidad en tienda origen
+        await database.updateInventoryQuantity(
+          event.fromStoreId,
+          event.productId,
+          availableQuantity - event.quantity,
+        );
+
+        // Aumentar cantidad en tienda destino
+        final toStoreInventory = await database.getProductsWithStoreInventory(
+          event.toStoreId,
+        );
+        final productInToStore = toStoreInventory.firstWhere(
+          (item) => (item['product'] as Product).id == event.productId,
+          orElse: () => {'storeQuantity': 0, 'hasInventory': false},
+        );
+
+        final currentQuantityInToStore =
+            productInToStore['storeQuantity'] as int;
+        final hasInventoryInToStore = productInToStore['hasInventory'] as bool;
+
+        if (hasInventoryInToStore) {
+          // Actualizar cantidad existente
+          await database.updateInventoryQuantity(
+            event.toStoreId,
+            event.productId,
+            currentQuantityInToStore + event.quantity,
+          );
+        } else {
+          // Crear nuevo registro de inventario
+          await database.insertStoreInventory(
+            StoreInventoryCompanion.insert(
+              storeId: event.toStoreId,
+              productId: event.productId,
+              availableQuantity: Value(event.quantity),
+            ),
+          );
+        }
+      });
+
+      emit(
+        ProductTransferred(
+          'Transferencia exitosa: ${event.quantity} unidades trasladadas entre tiendas',
+        ),
+      );
+
+      // Recargar datos si hay una tienda seleccionada
+      if (state is StoresLoaded) {
+        final currentState = state as StoresLoaded;
+        if (currentState.selectedStore != null) {
+          add(LoadStoreInventory(currentState.selectedStore!.id));
+        }
+      }
+    } catch (e) {
+      emit(StoresError('Error en transferencia: $e'));
     }
   }
 }

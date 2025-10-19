@@ -56,3 +56,12 @@ class StoreInventoryUpdated extends StoresState {
   @override
   List<Object?> get props => [message];
 }
+
+class ProductTransferred extends StoresState {
+  final String message;
+
+  const ProductTransferred(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}

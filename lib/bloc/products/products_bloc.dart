@@ -15,6 +15,8 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
     on<DeleteProduct>(_onDeleteProduct);
     on<ToggleCart>(_onToggleCart);
     on<UpdateCartQuantity>(_onUpdateCartQuantity);
+    on<LoadProductsWithStoreInventory>(_onLoadProductsWithStoreInventory);
+    on<UpdateStoreInventoryFromProducts>(_onUpdateStoreInventoryFromProducts);
   }
 
   Future<void> _onLoadProducts(
@@ -200,6 +202,83 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
         return products.where((item) => item.quantity > 0).toList();
       default:
         return products;
+    }
+  }
+
+  Future<void> _onLoadProductsWithStoreInventory(
+    LoadProductsWithStoreInventory event,
+    Emitter<ProductsState> emit,
+  ) async {
+    emit(ProductsLoading());
+    try {
+      final stores = await database.getAllStores();
+      final products = await database.getAllProducts();
+
+      // Crear un mapa de productos con su inventario por tienda
+      List<Map<String, dynamic>> productsWithInventory = [];
+
+      for (final product in products) {
+        Map<String, dynamic> productData = {
+          'product': product,
+          'storeInventories': <Map<String, dynamic>>[],
+        };
+
+        for (final store in stores) {
+          final storeInventoryData = await database
+              .getProductsWithStoreInventory(store.id);
+
+          Map<String, dynamic>? productInventory;
+          try {
+            productInventory = storeInventoryData.firstWhere(
+              (item) => (item['product'] as Product).id == product.id,
+            );
+          } catch (e) {
+            // Si no se encuentra el producto en el inventario de esta tienda
+            productInventory = <String, dynamic>{
+              'product': product,
+              'storeQuantity': 0,
+              'hasInventory': false,
+            };
+          }
+
+          (productData['storeInventories'] as List<Map<String, dynamic>>)
+              .add(<String, dynamic>{
+                'store': store,
+                'quantity': productInventory['storeQuantity'],
+                'hasInventory': productInventory['hasInventory'],
+              });
+        }
+
+        productsWithInventory.add(productData);
+      }
+
+      emit(
+        ProductsWithStoreInventoryLoaded(
+          productsWithInventory: productsWithInventory,
+          stores: stores,
+          currentFilter: 'inventario',
+        ),
+      );
+    } catch (e) {
+      emit(ProductsError('Error al cargar productos con inventario: $e'));
+    }
+  }
+
+  Future<void> _onUpdateStoreInventoryFromProducts(
+    UpdateStoreInventoryFromProducts event,
+    Emitter<ProductsState> emit,
+  ) async {
+    try {
+      await database.updateInventoryQuantity(
+        event.storeId,
+        event.productId,
+        event.quantity,
+      );
+
+      // Recargar datos actualizados
+      add(const LoadProductsWithStoreInventory());
+    } catch (e) {
+      emit(ProductsError('Error al actualizar inventario: $e'));
     }
   }
 }

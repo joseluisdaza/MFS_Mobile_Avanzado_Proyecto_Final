@@ -6,9 +6,11 @@ import 'package:carro_2_fin_expo_sqlite/bloc/products/products_state.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_state.dart';
+import 'package:carro_2_fin_expo_sqlite/database/database.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/carga_datos.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/pages/stores_page.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/pages/users_page.dart';
+import 'package:carro_2_fin_expo_sqlite/presentation/pages/inventory_by_stores_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -54,6 +56,19 @@ class HomePage extends StatelessWidget {
                 const FilterProducts('inventario'),
               );
               Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.inventory_2),
+            title: const Text('Inventario por Sucursal'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const InventoryByStoresPage(),
+                ),
+              );
             },
           ),
           ListTile(
@@ -271,7 +286,7 @@ class HomePage extends StatelessWidget {
   }
 
   void _showPaymentDialog(BuildContext context) {
-    context.read<CartBloc>().add(LoadCart());
+    context.read<CartBloc>().add(LoadCartWithStores());
 
     showDialog(
       context: context,
@@ -279,24 +294,129 @@ class HomePage extends StatelessWidget {
         listener: (context, state) {
           if (state is PaymentProcessed) {
             Navigator.of(context).pop();
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message)));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green,
+              ),
+            );
 
             // Recargar productos para actualizar el inventario
             context.read<ProductsBloc>().add(LoadProducts());
+          } else if (state is CartError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
+            );
           }
         },
         builder: (context, state) {
-          if (state is CartLoaded) {
+          if (state is CartWithStoresLoaded) {
             return AlertDialog(
               title: const Text('Resumen de Compra'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Total de items: ${state.totalItems}'),
-                  Text('Total a pagar: \$${state.total.toStringAsFixed(2)}'),
-                ],
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Información del carrito
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Total de items:'),
+                              Text(
+                                '${state.totalItems}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Total a pagar:'),
+                              Text(
+                                '\$${state.total.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Selector de sucursal
+                    const Text(
+                      'Seleccionar Sucursal:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<Store>(
+                      initialValue: state.selectedStore,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      hint: const Text('Elija una sucursal'),
+                      items: state.stores.map((store) {
+                        return DropdownMenuItem(
+                          value: store,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                store.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                store.location,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (store) {
+                        if (store != null) {
+                          context.read<CartBloc>().add(
+                            SelectStoreForPurchase(store.id),
+                          );
+                        }
+                      },
+                    ),
+
+                    // Validación de stock
+                    if (state.selectedStore != null) ...[
+                      const SizedBox(height: 16),
+                      _buildStockValidation(state),
+                    ],
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -304,17 +424,112 @@ class HomePage extends StatelessWidget {
                   child: const Text('Cancelar'),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    context.read<CartBloc>().add(ProcessPayment());
-                  },
-                  child: const Text('Pagar'),
+                  onPressed:
+                      state.selectedStore != null &&
+                          (state.storeStockValidation[state
+                                  .selectedStore!
+                                  .id] ??
+                              false)
+                      ? () {
+                          context.read<CartBloc>().add(
+                            ProcessPaymentFromStore(state.selectedStore!.id),
+                          );
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        state.selectedStore != null &&
+                            (state.storeStockValidation[state
+                                    .selectedStore!
+                                    .id] ??
+                                false)
+                        ? Colors.green
+                        : Colors.grey,
+                  ),
+                  child: Text(
+                    state.selectedStore == null
+                        ? 'Seleccione Sucursal'
+                        : (state.storeStockValidation[state
+                                  .selectedStore!
+                                  .id] ??
+                              false)
+                        ? 'Pagar'
+                        : 'Stock Insuficiente',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             );
           }
 
-          return const AlertDialog(content: CircularProgressIndicator());
+          return const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Cargando información de tiendas...'),
+              ],
+            ),
+          );
         },
+      ),
+    );
+  }
+
+  Widget _buildStockValidation(CartWithStoresLoaded state) {
+    final hasEnoughStock =
+        state.storeStockValidation[state.selectedStore!.id] ?? false;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: hasEnoughStock ? Colors.green[50] : Colors.red[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: hasEnoughStock ? Colors.green : Colors.red,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                hasEnoughStock ? Icons.check_circle : Icons.error,
+                color: hasEnoughStock ? Colors.green : Colors.red,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                hasEnoughStock ? 'Stock Disponible' : 'Stock Insuficiente',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: hasEnoughStock ? Colors.green[700] : Colors.red[700],
+                ),
+              ),
+            ],
+          ),
+          if (!hasEnoughStock && state.stockIssues.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            const Text(
+              'Problemas de stock:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            ...state.stockIssues
+                .map(
+                  (issue) => Padding(
+                    padding: const EdgeInsets.only(left: 16, top: 4),
+                    child: Text(
+                      '• $issue',
+                      style: TextStyle(color: Colors.red[700], fontSize: 12),
+                    ),
+                  ),
+                )
+                .toList(),
+          ],
+        ],
       ),
     );
   }
