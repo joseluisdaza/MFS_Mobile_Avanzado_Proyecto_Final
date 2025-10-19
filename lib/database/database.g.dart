@@ -47,17 +47,6 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     ),
     defaultValue: Constant(false),
   );
-  static const VerificationMeta _quantityMeta = const VerificationMeta(
-    'quantity',
-  );
-  @override
-  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
-    'quantity',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
   static const VerificationMeta _priceMeta = const VerificationMeta('price');
   @override
   late final GeneratedColumn<double> price = GeneratedColumn<double>(
@@ -114,7 +103,6 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     id,
     name,
     inCart,
-    quantity,
     price,
     description,
     category,
@@ -149,14 +137,6 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         _inCartMeta,
         inCart.isAcceptableOrUnknown(data['in_cart']!, _inCartMeta),
       );
-    }
-    if (data.containsKey('quantity')) {
-      context.handle(
-        _quantityMeta,
-        quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_quantityMeta);
     }
     if (data.containsKey('price')) {
       context.handle(
@@ -223,10 +203,6 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.bool,
         data['${effectivePrefix}in_cart'],
       )!,
-      quantity: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}quantity'],
-      )!,
       price: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}price'],
@@ -260,7 +236,6 @@ class Product extends DataClass implements Insertable<Product> {
   final int id;
   final String name;
   final bool inCart;
-  final int quantity;
   final double price;
   final String description;
   final String category;
@@ -270,7 +245,6 @@ class Product extends DataClass implements Insertable<Product> {
     required this.id,
     required this.name,
     required this.inCart,
-    required this.quantity,
     required this.price,
     required this.description,
     required this.category,
@@ -283,7 +257,6 @@ class Product extends DataClass implements Insertable<Product> {
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
     map['in_cart'] = Variable<bool>(inCart);
-    map['quantity'] = Variable<int>(quantity);
     map['price'] = Variable<double>(price);
     map['description'] = Variable<String>(description);
     map['category'] = Variable<String>(category);
@@ -297,7 +270,6 @@ class Product extends DataClass implements Insertable<Product> {
       id: Value(id),
       name: Value(name),
       inCart: Value(inCart),
-      quantity: Value(quantity),
       price: Value(price),
       description: Value(description),
       category: Value(category),
@@ -315,7 +287,6 @@ class Product extends DataClass implements Insertable<Product> {
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       inCart: serializer.fromJson<bool>(json['inCart']),
-      quantity: serializer.fromJson<int>(json['quantity']),
       price: serializer.fromJson<double>(json['price']),
       description: serializer.fromJson<String>(json['description']),
       category: serializer.fromJson<String>(json['category']),
@@ -332,7 +303,6 @@ class Product extends DataClass implements Insertable<Product> {
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'inCart': serializer.toJson<bool>(inCart),
-      'quantity': serializer.toJson<int>(quantity),
       'price': serializer.toJson<double>(price),
       'description': serializer.toJson<String>(description),
       'category': serializer.toJson<String>(category),
@@ -345,7 +315,6 @@ class Product extends DataClass implements Insertable<Product> {
     int? id,
     String? name,
     bool? inCart,
-    int? quantity,
     double? price,
     String? description,
     String? category,
@@ -355,7 +324,6 @@ class Product extends DataClass implements Insertable<Product> {
     id: id ?? this.id,
     name: name ?? this.name,
     inCart: inCart ?? this.inCart,
-    quantity: quantity ?? this.quantity,
     price: price ?? this.price,
     description: description ?? this.description,
     category: category ?? this.category,
@@ -367,7 +335,6 @@ class Product extends DataClass implements Insertable<Product> {
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       inCart: data.inCart.present ? data.inCart.value : this.inCart,
-      quantity: data.quantity.present ? data.quantity.value : this.quantity,
       price: data.price.present ? data.price.value : this.price,
       description: data.description.present
           ? data.description.value
@@ -386,7 +353,6 @@ class Product extends DataClass implements Insertable<Product> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('inCart: $inCart, ')
-          ..write('quantity: $quantity, ')
           ..write('price: $price, ')
           ..write('description: $description, ')
           ..write('category: $category, ')
@@ -401,7 +367,6 @@ class Product extends DataClass implements Insertable<Product> {
     id,
     name,
     inCart,
-    quantity,
     price,
     description,
     category,
@@ -415,7 +380,6 @@ class Product extends DataClass implements Insertable<Product> {
           other.id == this.id &&
           other.name == this.name &&
           other.inCart == this.inCart &&
-          other.quantity == this.quantity &&
           other.price == this.price &&
           other.description == this.description &&
           other.category == this.category &&
@@ -427,7 +391,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<int> id;
   final Value<String> name;
   final Value<bool> inCart;
-  final Value<int> quantity;
   final Value<double> price;
   final Value<String> description;
   final Value<String> category;
@@ -437,7 +400,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.inCart = const Value.absent(),
-    this.quantity = const Value.absent(),
     this.price = const Value.absent(),
     this.description = const Value.absent(),
     this.category = const Value.absent(),
@@ -448,14 +410,12 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.id = const Value.absent(),
     required String name,
     this.inCart = const Value.absent(),
-    required int quantity,
     required double price,
     required String description,
     required String category,
     required String image,
     this.shoppingCartQuantity = const Value.absent(),
   }) : name = Value(name),
-       quantity = Value(quantity),
        price = Value(price),
        description = Value(description),
        category = Value(category),
@@ -464,7 +424,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<int>? id,
     Expression<String>? name,
     Expression<bool>? inCart,
-    Expression<int>? quantity,
     Expression<double>? price,
     Expression<String>? description,
     Expression<String>? category,
@@ -475,7 +434,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (inCart != null) 'in_cart': inCart,
-      if (quantity != null) 'quantity': quantity,
       if (price != null) 'price': price,
       if (description != null) 'description': description,
       if (category != null) 'category': category,
@@ -489,7 +447,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Value<int>? id,
     Value<String>? name,
     Value<bool>? inCart,
-    Value<int>? quantity,
     Value<double>? price,
     Value<String>? description,
     Value<String>? category,
@@ -500,7 +457,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       id: id ?? this.id,
       name: name ?? this.name,
       inCart: inCart ?? this.inCart,
-      quantity: quantity ?? this.quantity,
       price: price ?? this.price,
       description: description ?? this.description,
       category: category ?? this.category,
@@ -520,9 +476,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     }
     if (inCart.present) {
       map['in_cart'] = Variable<bool>(inCart.value);
-    }
-    if (quantity.present) {
-      map['quantity'] = Variable<int>(quantity.value);
     }
     if (price.present) {
       map['price'] = Variable<double>(price.value);
@@ -548,7 +501,6 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('inCart: $inCart, ')
-          ..write('quantity: $quantity, ')
           ..write('price: $price, ')
           ..write('description: $description, ')
           ..write('category: $category, ')
@@ -2513,7 +2465,6 @@ typedef $$ProductsTableCreateCompanionBuilder =
       Value<int> id,
       required String name,
       Value<bool> inCart,
-      required int quantity,
       required double price,
       required String description,
       required String category,
@@ -2525,7 +2476,6 @@ typedef $$ProductsTableUpdateCompanionBuilder =
       Value<int> id,
       Value<String> name,
       Value<bool> inCart,
-      Value<int> quantity,
       Value<double> price,
       Value<String> description,
       Value<String> category,
@@ -2598,11 +2548,6 @@ class $$ProductsTableFilterComposer
 
   ColumnFilters<bool> get inCart => $composableBuilder(
     column: $table.inCart,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get quantity => $composableBuilder(
-    column: $table.quantity,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2706,11 +2651,6 @@ class $$ProductsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get quantity => $composableBuilder(
-    column: $table.quantity,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<double> get price => $composableBuilder(
     column: $table.price,
     builder: (column) => ColumnOrderings(column),
@@ -2754,9 +2694,6 @@ class $$ProductsTableAnnotationComposer
 
   GeneratedColumn<bool> get inCart =>
       $composableBuilder(column: $table.inCart, builder: (column) => column);
-
-  GeneratedColumn<int> get quantity =>
-      $composableBuilder(column: $table.quantity, builder: (column) => column);
 
   GeneratedColumn<double> get price =>
       $composableBuilder(column: $table.price, builder: (column) => column);
@@ -2862,7 +2799,6 @@ class $$ProductsTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<bool> inCart = const Value.absent(),
-                Value<int> quantity = const Value.absent(),
                 Value<double> price = const Value.absent(),
                 Value<String> description = const Value.absent(),
                 Value<String> category = const Value.absent(),
@@ -2872,7 +2808,6 @@ class $$ProductsTableTableManager
                 id: id,
                 name: name,
                 inCart: inCart,
-                quantity: quantity,
                 price: price,
                 description: description,
                 category: category,
@@ -2884,7 +2819,6 @@ class $$ProductsTableTableManager
                 Value<int> id = const Value.absent(),
                 required String name,
                 Value<bool> inCart = const Value.absent(),
-                required int quantity,
                 required double price,
                 required String description,
                 required String category,
@@ -2894,7 +2828,6 @@ class $$ProductsTableTableManager
                 id: id,
                 name: name,
                 inCart: inCart,
-                quantity: quantity,
                 price: price,
                 description: description,
                 category: category,

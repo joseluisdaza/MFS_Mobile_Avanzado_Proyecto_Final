@@ -11,8 +11,6 @@ class Products extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text().withLength(min: 1, max: 100)();
   BoolColumn get inCart => boolean().withDefault(Constant(false))();
-  IntColumn get quantity =>
-      integer()(); // Esto ahora será cantidad global/master
   RealColumn get price => real()();
   TextColumn get description => text()();
   TextColumn get category => text()();
@@ -125,7 +123,7 @@ class AppDatabase extends _$AppDatabase {
       (select(products)..where((p) => p.inCart.equals(true))).get();
 
   Future<List<Product>> getAvailableProducts() =>
-      (select(products)..where((p) => p.quantity.isBiggerThanValue(0))).get();
+      select(products).get(); // Now availability is managed by store inventory
 
   // === STORES CRUD ===
   Future<List<Store>> getAllStores() => select(stores).get();
@@ -177,6 +175,34 @@ class AppDatabase extends _$AppDatabase {
           .write(
             StoreInventoryCompanion(availableQuantity: Value(newQuantity)),
           );
+
+  // Crear inventario inicial para un producto en todas las tiendas
+  Future<void> createInitialInventoryForProduct(int productId) async {
+    final stores = await getAllStores();
+    for (final store in stores) {
+      await insertStoreInventory(
+        StoreInventoryCompanion(
+          storeId: Value(store.id),
+          productId: Value(productId),
+          availableQuantity: const Value(0),
+        ),
+      );
+    }
+  }
+
+  // Obtener inventario de un producto por tienda específica
+  Future<StoreInventoryData?> getProductInventoryInStore(
+    int productId,
+    int storeId,
+  ) async {
+    final result =
+        await (select(storeInventory)..where(
+              (si) =>
+                  si.productId.equals(productId) & si.storeId.equals(storeId),
+            ))
+            .getSingleOrNull();
+    return result;
+  }
 
   // === PURCHASE HISTORY CRUD ===
   Future<List<PurchaseHistoryData>> getAllPurchases() =>
@@ -350,21 +376,21 @@ class AppDatabase extends _$AppDatabase {
       // Si hay productos existentes, crear inventario inicial para ambas tiendas
       final products = await getAllProducts();
       for (final product in products) {
-        // Inventario para tienda centro (70% del stock total)
+        // Inventario para tienda sur (cantidad inicial fija)
         await insertStoreInventory(
           StoreInventoryCompanion.insert(
             storeId: store1Id,
             productId: product.id,
-            availableQuantity: Value((product.quantity * 0.7).round()),
+            availableQuantity: const Value(15), // Cantidad inicial fija
           ),
         );
 
-        // Inventario para tienda norte (30% del stock total)
+        // Inventario para tienda norte (cantidad inicial fija)
         await insertStoreInventory(
           StoreInventoryCompanion.insert(
             storeId: store2Id,
             productId: product.id,
-            availableQuantity: Value((product.quantity * 0.3).round()),
+            availableQuantity: const Value(10), // Cantidad inicial fija
           ),
         );
       }

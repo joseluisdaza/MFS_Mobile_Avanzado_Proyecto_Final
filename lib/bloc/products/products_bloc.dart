@@ -68,10 +68,10 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
     Emitter<ProductsState> emit,
   ) async {
     try {
-      await database.insertProduct(
+      // Insertar el producto
+      final productId = await database.insertProduct(
         ProductsCompanion.insert(
           name: event.product.name,
-          quantity: event.product.quantity,
           price: event.product.price,
           description: event.product.description,
           category: event.product.category,
@@ -80,6 +80,10 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
           shoppingCartQuantity: Value(event.product.shoppingCartQuantity),
         ),
       );
+
+      // Crear inventario inicial en todas las tiendas con cantidad 0
+      await database.createInitialInventoryForProduct(productId);
+
       add(LoadProducts()); // Recargar productos
       emit(const ProductOperationSuccess('Producto agregado exitosamente'));
     } catch (e) {
@@ -197,7 +201,7 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
       case 'carrito':
         return products.where((item) => item.inCart == true).toList();
       case 'comprar':
-        return products.where((item) => item.quantity > 0).toList();
+        return products; // Mostrar todos los productos para compra
       default:
         return products;
     }

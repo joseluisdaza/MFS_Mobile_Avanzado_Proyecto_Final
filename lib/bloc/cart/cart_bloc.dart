@@ -38,15 +38,28 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     ProcessPayment event,
     Emitter<CartState> emit,
   ) async {
-    if (state is CartLoaded) {
-      final currentState = state as CartLoaded;
+    if (state is CartWithStoresLoaded) {
+      final currentState = state as CartWithStoresLoaded;
 
       try {
-        // Actualizar inventario (reducir quantity por shoppingCartQuantity)
+        // Actualizar inventario de la tienda seleccionada y limpiar carrito
         for (final item in currentState.cartItems) {
-          final newQuantity = item.quantity - item.shoppingCartQuantity;
+          // Actualizar inventario en la tienda seleccionada
+          final inventoryData = await database.getProductInventoryInStore(
+            item.id,
+            currentState.selectedStore!.id,
+          );
+          final currentQuantity = inventoryData?.availableQuantity ?? 0;
+          final newQuantity = currentQuantity - item.shoppingCartQuantity;
+
+          await database.updateInventoryQuantity(
+            currentState.selectedStore!.id,
+            item.id,
+            newQuantity >= 0 ? newQuantity : 0,
+          );
+
+          // Limpiar estado del carrito para este producto
           final updatedItem = item.copyWith(
-            quantity: newQuantity >= 0 ? newQuantity : 0,
             inCart: false,
             shoppingCartQuantity: 0,
           );

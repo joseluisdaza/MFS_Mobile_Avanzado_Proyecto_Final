@@ -8,6 +8,7 @@ import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_state.dart';
 import 'package:carro_2_fin_expo_sqlite/database/database.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/product_dialog.dart';
+import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/inventory_dialog.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/pages/stores_page.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/pages/users_page.dart';
 
@@ -122,7 +123,7 @@ class HomePage extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8.0),
                       child: Image.network(
-                        product.image ?? 'https://via.placeholder.com/60',
+                        product.image,
                         width: 60,
                         height: 60,
                         fit: BoxFit.cover,
@@ -144,18 +145,16 @@ class HomePage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            product.name ?? 'Sin nombre',
+                            product.name,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text('\$${product.price.toStringAsFixed(2)}'),
-                          if (state.currentFilter == 'inventario')
-                            Text('Saldo: ${product.quantity}'),
-                          if (product.description?.isNotEmpty == true)
+                          if (product.description.isNotEmpty)
                             Text(
-                              product.description!,
+                              product.description,
                               style: const TextStyle(fontSize: 12),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -229,12 +228,24 @@ class HomePage extends StatelessWidget {
         );
 
       case 'inventario':
-        return IconButton(
-          onPressed: () {
-            _showProductDialog(context, product);
-          },
-          icon: const Icon(Icons.edit),
-          tooltip: 'Editar producto',
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              onPressed: () {
+                _showProductDialog(context, product);
+              },
+              icon: const Icon(Icons.edit),
+              tooltip: 'Editar producto',
+            ),
+            IconButton(
+              onPressed: () {
+                _showInventoryDialog(context, product);
+              },
+              icon: const Icon(Icons.inventory),
+              tooltip: 'Gestionar inventario',
+            ),
+          ],
         );
 
       default:
@@ -524,6 +535,13 @@ class HomePage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => ProductDialog(product: product),
+    );
+  }
+
+  void _showInventoryDialog(BuildContext context, Product product) {
+    showDialog(
+      context: context,
+      builder: (context) => InventoryDialog(product: product),
     );
   }
 }
