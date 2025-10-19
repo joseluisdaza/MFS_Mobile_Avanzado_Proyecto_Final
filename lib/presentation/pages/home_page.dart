@@ -7,6 +7,7 @@ import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_bloc.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_event.dart';
 import 'package:carro_2_fin_expo_sqlite/bloc/cart/cart_state.dart';
 import 'package:carro_2_fin_expo_sqlite/presentation/dialogos/carga_datos.dart';
+import 'package:carro_2_fin_expo_sqlite/presentation/pages/stores_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -69,6 +70,17 @@ class HomePage extends StatelessWidget {
             onTap: () {
               context.read<ProductsBloc>().add(const FilterProducts('comprar'));
               Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.store),
+            title: const Text('Tiendas'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const StoresPage()),
+              );
             },
           ),
         ],
